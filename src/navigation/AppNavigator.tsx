@@ -125,6 +125,8 @@ const NotificationsNavigator: React.FC = () => {
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
       <Stack.Screen name="BookingsList" component={BookingsScreen} />
       <Stack.Screen name="BookingTracking" component={BookingTrackingScreen} />
+      <Stack.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <Stack.Screen name="Reschedule" component={RescheduleScreen} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="RateReview" component={RateReviewScreen} />
     </Stack.Navigator>
