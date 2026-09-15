@@ -13,33 +13,12 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
-import { useLocation } from '../context/LocationContext';
 
 interface BookingSummaryProps {
-  route?: {
-    params?: {
-      vendor?: {
-        id: string;
-        name: string;
-        category: string;
-        rating: number;
-        reviewsCount: number;
-        experienceYears: number;
-        distanceKm: number;
-        startingPrice: number;
-        image: any;
-        photosCount: number;
-        isVerified: boolean;
-        type: string;
-      };
-      serviceName?: string;
-    };
-  };
+  route?: any;
   navigation?: any;
   onBack?: () => void;
 }
@@ -50,64 +29,82 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const { location } = useLocation();
 
-  const vendorData = route?.params?.vendor || {
-    id: 'v2',
-    name: 'Royal Beats Dhol Group',
-    category: 'Dhol',
-    rating: 4.6,
-    reviewsCount: 210,
-    experienceYears: 5,
-    distanceKm: 3.1,
-    startingPrice: 8000,
-    image: Assets.serviceBrassBand,
-    photosCount: 8,
-    isVerified: true,
-    type: 'Professional Group',
-  };
+  // Booking Data States
+  const [eventType, setEventType] = useState('Wedding Ceremony');
+  const [eventDate, setEventDate] = useState('25 November 2026 (Wednesday)');
+  const [eventTime, setEventTime] = useState('6:00 PM – 11:00 PM');
+  const [eventLocation, setEventLocation] = useState('Royal Greens, Indore, Madhya Pradesh');
+  const [guestCount, setGuestCount] = useState('300 – 400 Guests');
 
-  const serviceName = route?.params?.serviceName || 'Dhol Services';
+  // Meeting Details
+  const [meetingDate, setMeetingDate] = useState('16 September 2026');
+  const [meetingTime, setMeetingTime] = useState('10:00 AM – 11:00 AM');
+  const [meetingLocation, setMeetingLocation] = useState('301, Shekhar Central, MG Road, Indore – 452001');
 
-  // Event Details State
-  const [eventDate, setEventDate] = useState('15 Nov 2026, Sunday');
-  const [eventTimeSlot, setEventTimeSlot] = useState('Evening (5:00 PM - 9:00 PM)');
-  const [eventLocation, setEventLocation] = useState(
-    `${location?.city || 'Indore'}, ${location?.state || 'Madhya Pradesh'}`
-  );
+  // Agreed Price
+  const agreedAmount = route?.params?.amount || 75000;
+  const vendorName = route?.params?.vendorName || 'Royal Events & Decor';
 
-  // Modals State
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+  // Terms Agreement
+  const [isTermsAgreed, setIsTermsAgreed] = useState(true);
 
-  // Financial Breakdown Calculations
-  const basePrice = vendorData.startingPrice || 8000;
-  const artistCharges = 2000;
-  const travelSetupCharges = 1000;
-  const totalAmount = basePrice + artistCharges + travelSetupCharges;
+  // Modals for Editing
+  const [isEditEventModalVisible, setIsEditEventModalVisible] = useState(false);
+  const [isEditMeetingModalVisible, setIsEditMeetingModalVisible] = useState(false);
+  const [isEditServicesModalVisible, setIsEditServicesModalVisible] = useState(false);
+
+  // Selected Services List
+  const [selectedServices, setSelectedServices] = useState([
+    { id: '1', name: 'Stage Decoration', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=200&q=80' },
+    { id: '2', name: 'Entry Gate', image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=200&q=80' },
+    { id: '3', name: 'Flower Setup', image: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=200&q=80' },
+    { id: '4', name: 'Lighting', image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=200&q=80' },
+    { id: '5', name: 'Welcome Board', image: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=200&q=80' },
+  ]);
 
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else if (navigation?.goBack) {
+    } else if (navigation?.canGoBack?.()) {
       navigation.goBack();
+    } else {
+      navigation?.navigate('NegotiatePrice');
     }
   };
 
-  const handleContinuePayment = () => {
-    navigation?.navigate('Payment', {
-      vendor: vendorData,
-      eventDate,
-      eventTime: eventTimeSlot,
-      eventLocation,
-      totalAmount,
-    });
+  const handleConfirmBooking = () => {
+    if (!isTermsAgreed) {
+      Alert.alert(
+        'Terms & Conditions',
+        'Please agree to the Terms & Conditions and Cancellation Policy before confirming the booking.'
+      );
+      return;
+    }
+
+    if (navigation?.navigate) {
+      navigation.navigate('MakePayment', {
+        bookingId: 'BBBD126789',
+        vendorName: vendorName,
+        serviceName: eventType + ' - Decoration & Setup',
+        totalAmount: agreedAmount,
+        advancePaid: 25000,
+        amount: 50000,
+        eventDate: eventDate,
+        eventLocation: eventLocation,
+        guestCount: guestCount,
+      });
+    } else {
+      Alert.alert(
+        'Booking Confirmed!',
+        `Your booking with ${vendorName} for ₹${agreedAmount.toLocaleString('en-IN')} has been confirmed successfully.`
+      );
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FDF7F4" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Header */}
       <View
@@ -118,376 +115,516 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
               Platform.OS === 'android'
                 ? (StatusBar.currentHeight || 24) + 6
                 : insets.top > 0
-                ? insets.top + 4
-                : 20,
+                ? insets.top + 2
+                : 16,
           },
         ]}
       >
-        <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={styles.headerBackBtn}>
-          <Ionicons name="arrow-back" size={24} color="#1A040A" />
-        </TouchableOpacity>
+        <View style={styles.headerLeftContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            activeOpacity={0.7}
+            onPress={handleBack}
+          >
+            <Ionicons name="arrow-back" size={24} color="#1C1B1F" />
+          </TouchableOpacity>
 
-        <View style={styles.headerTitleCol}>
-          <Text style={styles.headerTitle}>
-            Booking <Text style={styles.headerTitleMaroon}>Summary</Text>
-          </Text>
-          <Text style={styles.headerSubtitle}>Check your details before you proceed</Text>
+          <View style={styles.titleColumn}>
+            <Text style={styles.screenTitle}>
+              Booking <Text style={styles.screenTitleHighlight}>Summary</Text>
+            </Text>
+            <Text style={styles.screenSubtitle}>
+              Review your booking details before confirmation
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.scriptBadge}>
-          <Text style={styles.scriptBadgeText}>Dhol Ki</Text>
-          <Text style={styles.scriptBadgeText}>Dhamak, Shaadi</Text>
-          <Text style={styles.scriptBadgeText}>Ki Raunak ♡</Text>
+        {/* Top Right Decorative Tag */}
+        <View style={styles.decorativeTag}>
+          <View style={styles.calendarGraphicBox}>
+            <Ionicons name="calendar" size={16} color="#D81B60" />
+            <View style={styles.checkMiniBadge}>
+              <Ionicons name="checkmark" size={7} color="#FFFFFF" />
+            </View>
+          </View>
+          <View style={styles.tagTextCol}>
+            <Text style={styles.decorativeLine1}>Almost</Text>
+            <Text style={styles.decorativeLine2}>There!</Text>
+            <Text style={styles.decorativeLine3}>Let's Make Your</Text>
+            <Text style={styles.decorativeLine4}>Celebration Special ♡</Text>
+          </View>
         </View>
       </View>
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
+        style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Top Service Summary Card */}
-        <View style={styles.serviceSummaryCard}>
-          <Image source={Assets.groomBaarat} style={styles.serviceImg} />
+        {/* Vendor Header Card */}
+        <View style={styles.vendorCard}>
+          <View style={styles.vendorTopRow}>
+            <Image
+              source={Assets.weddingMandapArt || { uri: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' }}
+              style={styles.vendorImage}
+              resizeMode="cover"
+            />
 
-          <View style={styles.serviceInfoCol}>
-            <View style={styles.serviceTagPriceRow}>
-              <View style={styles.categoryPill}>
-                <Text style={styles.categoryPillText}>Dhol</Text>
-              </View>
-
-              <View style={styles.priceBadge}>
-                <Text style={styles.priceBadgeAmount}>₹{basePrice.toLocaleString('en-IN')}</Text>
-                <Text style={styles.priceBadgeOnwards}>onwards</Text>
-              </View>
-            </View>
-
-            <Text style={styles.serviceHeading}>Dhol Services</Text>
-            <Text style={styles.serviceTaglineText}>
-              Traditional Dhol beats to make your special moments more grand and lively.
-            </Text>
-
-            {/* 3 Circular Feature Badges */}
-            <View style={styles.featuresRow}>
-              <View style={styles.featureItem}>
-                <View style={styles.featureIconCircle}>
-                  <Ionicons name="musical-notes" size={13} color="#8A072D" />
-                </View>
-                <Text style={styles.featureLabel}>Live{'\n'}Performance</Text>
-              </View>
-
-              <View style={styles.featureItem}>
-                <View style={styles.featureIconCircle}>
-                  <Ionicons name="people" size={13} color="#8A072D" />
-                </View>
-                <Text style={styles.featureLabel}>Professional{'\n'}Artists</Text>
-              </View>
-
-              <View style={styles.featureItem}>
-                <View style={styles.featureIconCircle}>
-                  <Ionicons name="shield-checkmark" size={13} color="#8A072D" />
-                </View>
-                <Text style={styles.featureLabel}>Verified{'\n'}Vendor</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Selected Vendor Card */}
-        <TouchableOpacity
-          style={styles.vendorCard}
-          activeOpacity={0.8}
-          onPress={() =>
-            Alert.alert(vendorData.name, `Rating: ${vendorData.rating} ⭐ • Verified Wedding Partner`)
-          }
-        >
-          {/* Vendor Logo Emblem */}
-          <LinearGradient
-            colors={['#8A072D', '#5E041E', '#3D0212']}
-            style={styles.vendorEmblem}
-          >
-            <FontAwesome5 name="crown" size={12} color="#F3D09C" style={{ marginBottom: 2 }} />
-            <Text style={styles.emblemText1}>Royal Beats</Text>
-            <Text style={styles.emblemText2}>— DHOL GROUP —</Text>
-          </LinearGradient>
-
-          <View style={styles.vendorDetailsCol}>
-            <View style={styles.vendorNameRow}>
-              <Text style={styles.vendorNameText} numberOfLines={1}>
-                {vendorData.name}
+            <View style={styles.vendorDetailsCol}>
+              <Text style={styles.vendorName} numberOfLines={1}>
+                {vendorName}
               </Text>
-              <Ionicons name="checkmark-circle" size={15} color="#8A072D" />
-            </View>
 
-            <View style={styles.vendorRatingRow}>
-              <Ionicons name="star" size={12} color="#E59819" />
-              <Text style={styles.ratingText}>{vendorData.rating}</Text>
-              <Text style={styles.reviewsText}>({vendorData.reviewsCount} reviews)</Text>
-              <Text style={styles.pipeText}>|</Text>
-              <Text style={styles.expText}>{vendorData.experienceYears}+ Years</Text>
-            </View>
-
-            <View style={styles.vendorDistanceRow}>
-              <Ionicons name="location-outline" size={12} color="#8A072D" />
-              <Text style={styles.distanceText}>{vendorData.distanceKm} KM away</Text>
-            </View>
-
-            <View style={styles.badgesRow}>
-              <View style={styles.badgePill}>
-                <Ionicons name="shield-outline" size={10} color="#8A072D" />
-                <Text style={styles.badgePillText}>{vendorData.type || 'Professional Group'}</Text>
+              <View style={styles.vendorRatingRow}>
+                <Ionicons name="star" size={13} color="#F59E0B" />
+                <Text style={styles.vendorRatingScore}>4.8</Text>
+                <Text style={styles.vendorReviewsCount}>(320 reviews)</Text>
               </View>
-              <View style={styles.badgePill}>
-                <Ionicons name="calendar-outline" size={10} color="#8A072D" />
-                <Text style={styles.badgePillText}>Available on your date</Text>
-              </View>
-            </View>
-          </View>
 
-          <Ionicons name="chevron-forward" size={18} color="#9C8B8E" />
-        </TouchableOpacity>
-
-        {/* Event Date & Time Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="calendar" size={18} color="#8A072D" />
-          </View>
-
-          <View style={styles.infoCol}>
-            <Text style={styles.infoCardTitle}>Event Date & Time</Text>
-            <View style={styles.infoDetailRow}>
-              <Ionicons name="calendar-outline" size={13} color="#8A072D" />
-              <Text style={styles.infoDetailText}>{eventDate}</Text>
-            </View>
-            <View style={styles.infoDetailRow}>
-              <Ionicons name="time-outline" size={13} color="#8A072D" />
-              <Text style={styles.infoDetailText}>{eventTimeSlot}</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.editPillBtn}
-            onPress={() => setShowDateModal(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="pencil" size={12} color="#8A072D" />
-            <Text style={styles.editPillBtnText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Event Location Card */}
-        <TouchableOpacity
-          style={styles.infoCard}
-          onPress={() => setShowLocationModal(true)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.iconCircle}>
-            <Ionicons name="location" size={18} color="#8A072D" />
-          </View>
-
-          <View style={styles.infoCol}>
-            <Text style={styles.infoCardTitle}>Event Location</Text>
-            <Text style={styles.infoLocationText}>{eventLocation}</Text>
-          </View>
-
-          <Ionicons name="chevron-forward" size={18} color="#9C8B8E" />
-        </TouchableOpacity>
-
-        {/* Price Breakup Card */}
-        <View style={styles.priceBreakupCard}>
-          <Text style={styles.priceBreakupTitle}>Price Breakup</Text>
-
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Dhol Services (Basic Package)</Text>
-            <Text style={styles.priceValue}>₹{basePrice.toLocaleString('en-IN')}</Text>
-          </View>
-
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Artist Charges</Text>
-            <Text style={styles.priceValue}>₹{artistCharges.toLocaleString('en-IN')}</Text>
-          </View>
-
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Travel & Setup Charges</Text>
-            <Text style={styles.priceValue}>₹{travelSetupCharges.toLocaleString('en-IN')}</Text>
-          </View>
-
-          {/* Highlighted Total Amount Row */}
-          <View style={styles.totalAmountBox}>
-            <Text style={styles.totalAmountLabel}>Total Amount</Text>
-            <Text style={styles.totalAmountValue}>₹{totalAmount.toLocaleString('en-IN')}</Text>
-          </View>
-        </View>
-
-        {/* 100% Safe & Secure Booking Banner */}
-        <View style={styles.safeSecureBanner}>
-          <View style={styles.shieldIconWrapper}>
-            <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" />
-          </View>
-          <View style={styles.safeSecureTextCol}>
-            <Text style={styles.safeSecureTitle}>100% Safe & Secure Booking</Text>
-            <Text style={styles.safeSecureSubtitle}>
-              Your payment and personal details are always protected.
-            </Text>
-          </View>
-        </View>
-
-        {/* Continue to Payment CTA */}
-        <TouchableOpacity
-          style={styles.continuePaymentBtn}
-          activeOpacity={0.85}
-          onPress={handleContinuePayment}
-        >
-          <Text style={styles.continuePaymentBtnText}>Continue to Payment</Text>
-          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <View style={styles.secureGatewayRow}>
-          <Ionicons name="lock-closed" size={13} color="#6E5C60" />
-          <Text style={styles.secureGatewayText}>Secure Payment Gateway</Text>
-        </View>
-
-        <View style={{ height: 30 }} />
-      </ScrollView>
-
-      {/* Date & Time Picker Modal */}
-      <Modal visible={showDateModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Wedding Event Date</Text>
-              <TouchableOpacity onPress={() => setShowDateModal(false)}>
-                <Ionicons name="close" size={22} color="#1A040A" />
-              </TouchableOpacity>
-            </View>
-
-            {[
-              { date: '15 Nov 2026, Sunday', time: 'Evening (5:00 PM - 9:00 PM)' },
-              { date: '22 Nov 2026, Sunday', time: 'Night (7:00 PM - 11:00 PM)' },
-              { date: '04 Dec 2026, Friday', time: 'Evening (4:30 PM - 8:30 PM)' },
-              { date: '12 Dec 2026, Saturday', time: 'Morning (10:00 AM - 2:00 PM)' },
-            ].map((slot) => (
-              <TouchableOpacity
-                key={slot.date}
-                style={[
-                  styles.slotOptionRow,
-                  eventDate === slot.date && styles.slotOptionRowActive,
-                ]}
-                onPress={() => {
-                  setEventDate(slot.date);
-                  setEventTimeSlot(slot.time);
-                  setShowDateModal(false);
-                }}
-              >
-                <View>
-                  <Text
-                    style={[
-                      styles.slotOptionDate,
-                      eventDate === slot.date && styles.slotOptionDateActive,
-                    ]}
-                  >
-                    {slot.date}
-                  </Text>
-                  <Text style={styles.slotOptionTime}>{slot.time}</Text>
-                </View>
-                {eventDate === slot.date && (
-                  <Ionicons name="checkmark-circle" size={18} color="#8A072D" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Location Picker Modal */}
-      <Modal visible={showLocationModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Wedding Venue City</Text>
-              <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-                <Ionicons name="close" size={22} color="#1A040A" />
-              </TouchableOpacity>
-            </View>
-
-            {[
-              'Indore, Madhya Pradesh',
-              'Jaipur, Rajasthan',
-              'Udaipur, Rajasthan',
-              'Bhopal, Madhya Pradesh',
-              'Delhi NCR',
-              'Mumbai, Maharashtra',
-            ].map((loc) => (
-              <TouchableOpacity
-                key={loc}
-                style={[
-                  styles.slotOptionRow,
-                  eventLocation === loc && styles.slotOptionRowActive,
-                ]}
-                onPress={() => {
-                  setEventLocation(loc);
-                  setShowLocationModal(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.slotOptionDate,
-                    eventLocation === loc && styles.slotOptionDateActive,
-                  ]}
-                >
-                  {loc}
+              <View style={styles.vendorLocationRow}>
+                <Ionicons name="location-sharp" size={12} color="#D81B60" />
+                <Text style={styles.vendorLocationText} numberOfLines={1}>
+                  Indore, Madhya Pradesh
                 </Text>
-                {eventLocation === loc && (
-                  <Ionicons name="checkmark-circle" size={18} color="#8A072D" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Payment Success Dialog */}
-      <Modal visible={showPaymentSuccessModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.successModalCard}>
-            <View style={styles.successIconCircle}>
-              <Ionicons name="checkmark" size={36} color="#FFFFFF" />
-            </View>
-
-            <Text style={styles.successTitle}>Booking Confirmed! 🎉</Text>
-            <Text style={styles.successSubtitle}>
-              Your wedding booking with {vendorData.name} has been placed successfully.
-            </Text>
-
-            <View style={styles.successSummaryBox}>
-              <View style={styles.successRow}>
-                <Text style={styles.successLabel}>Booking ID:</Text>
-                <Text style={styles.successVal}>#BBB-2026-9044</Text>
-              </View>
-              <View style={styles.successRow}>
-                <Text style={styles.successLabel}>Event Date:</Text>
-                <Text style={styles.successVal}>{eventDate}</Text>
-              </View>
-              <View style={styles.successRow}>
-                <Text style={styles.successLabel}>Advance Paid:</Text>
-                <Text style={styles.successValGreen}>₹{(totalAmount * 0.4).toLocaleString('en-IN')}</Text>
-              </View>
-              <View style={styles.successRow}>
-                <Text style={styles.successLabel}>Balance on Event:</Text>
-                <Text style={styles.successVal}>₹{(totalAmount * 0.6).toLocaleString('en-IN')}</Text>
               </View>
             </View>
 
             <TouchableOpacity
-              style={styles.viewMyBookingsBtn}
-              activeOpacity={0.85}
-              onPress={() => {
-                setShowPaymentSuccessModal(false);
-                navigation?.navigate('Bookings');
-              }}
+              style={styles.viewProfileBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation?.navigate('RateReview')}
             >
-              <Text style={styles.viewMyBookingsBtnText}>Go to My Bookings</Text>
-              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+              <Text style={styles.viewProfileBtnText}>View Profile</Text>
+              <Ionicons name="chevron-forward" size={13} color="#D81B60" />
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.badgesRow}>
+            <View style={styles.badgePill}>
+              <Ionicons name="shield-checkmark" size={13} color="#D81B60" style={{ marginRight: 4 }} />
+              <Text style={styles.badgeText}>Verified</Text>
+            </View>
+
+            <View style={styles.badgePill}>
+              <Ionicons name="trophy" size={13} color="#D81B60" style={{ marginRight: 4 }} />
+              <Text style={styles.badgeText}>Top Rated</Text>
+            </View>
+
+            <View style={styles.badgePill}>
+              <Ionicons name="headset" size={13} color="#D81B60" style={{ marginRight: 4 }} />
+              <Text style={styles.badgeText}>Quick Response</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Section 1: Event Details */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <Ionicons name="calendar-outline" size={15} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Event Details</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => setIsEditEventModalVisible(true)}
+            >
+              <Ionicons name="pencil" size={12} color="#E53935" style={{ marginRight: 2 }} />
+              <Text style={styles.editLinkText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Event Type</Text>
+              <Text style={styles.detailValue}>{eventType}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Event Date</Text>
+              <Text style={styles.detailValue}>{eventDate}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Event Time</Text>
+              <Text style={styles.detailValue}>{eventTime}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Event Location</Text>
+              <Text style={styles.detailValue}>{eventLocation}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Guest Count</Text>
+              <Text style={styles.detailValue}>{guestCount}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Section 2: Selected Services */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <Ionicons name="list-outline" size={15} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Selected Services</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => setIsEditServicesModalVisible(true)}
+            >
+              <Ionicons name="pencil" size={12} color="#E53935" style={{ marginRight: 2 }} />
+              <Text style={styles.editLinkText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.servicesScrollRow}
+          >
+            {selectedServices.map((service) => (
+              <View key={service.id} style={styles.serviceItemCard}>
+                <Image source={{ uri: service.image }} style={styles.serviceItemImg} />
+                <Text style={styles.serviceItemName} numberOfLines={2}>
+                  {service.name}
+                </Text>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.moreServicesCard}
+              activeOpacity={0.8}
+              onPress={() => setIsEditServicesModalVisible(true)}
+            >
+              <Text style={styles.moreServicesPlus}>+2</Text>
+              <Text style={styles.moreServicesText}>More Services</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
+        {/* Section 3: Meeting Details */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <Ionicons name="people-outline" size={15} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Meeting Details</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => setIsEditMeetingModalVisible(true)}
+            >
+              <Ionicons name="pencil" size={12} color="#E53935" style={{ marginRight: 2 }} />
+              <Text style={styles.editLinkText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.meetingDetailsCol}>
+            <View style={styles.meetingDetailItem}>
+              <Ionicons name="calendar-outline" size={15} color="#E53935" style={styles.meetingItemIcon} />
+              <Text style={styles.meetingLabel}>Meeting Date</Text>
+              <Text style={styles.meetingValue}>{meetingDate}</Text>
+            </View>
+
+            <View style={styles.meetingDetailItem}>
+              <Ionicons name="time-outline" size={15} color="#E53935" style={styles.meetingItemIcon} />
+              <Text style={styles.meetingLabel}>Meeting Time</Text>
+              <Text style={styles.meetingValue}>{meetingTime}</Text>
+            </View>
+
+            <View style={styles.meetingDetailItem}>
+              <Ionicons name="location-outline" size={15} color="#E53935" style={styles.meetingItemIcon} />
+              <Text style={styles.meetingLabel}>Meeting Location</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.meetingValue}>At Vendor's Office</Text>
+                <Text style={styles.meetingSubAddress}>{meetingLocation}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Section 4: Price Details */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <FontAwesome5 name="rupee-sign" size={13} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Price Details</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation?.navigate('NegotiatePrice')}
+            >
+              <Ionicons name="pencil" size={12} color="#E53935" style={{ marginRight: 2 }} />
+              <Text style={styles.editLinkText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.priceDetailsRow}>
+            <View style={styles.docIconSquare}>
+              <Ionicons name="document-text" size={22} color="#E53935" />
+            </View>
+
+            <View style={styles.priceAmountCol}>
+              <Text style={styles.priceLabel}>Agreed Amount</Text>
+              <Text style={styles.priceValue}>₹ {agreedAmount.toLocaleString('en-IN')}</Text>
+            </View>
+
+            <View style={styles.priceBadgeCol}>
+              <View style={styles.priceGreenPill}>
+                <Ionicons name="checkmark-circle" size={12} color="#15803D" style={{ marginRight: 3 }} />
+                <Text style={styles.priceGreenText}>Price Negotiated</Text>
+              </View>
+              <Text style={styles.priceIncludedText}>(Incl. all selected services)</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Section 5: Payment Method */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <Ionicons name="card-outline" size={15} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Payment Method</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation?.navigate('SavedPaymentMethods')}
+            >
+              <Ionicons name="pencil" size={12} color="#E53935" style={{ marginRight: 2 }} />
+              <Text style={styles.editLinkText}>Change</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.paymentMethodCard}>
+            <View style={styles.cardLogoBox}>
+              <Text style={styles.visaText}>VISA</Text>
+            </View>
+            <View style={styles.paymentCardInfo}>
+              <Text style={styles.paymentCardName}>HDFC Bank **** 7812</Text>
+              <Text style={styles.paymentCardExpiry}>Expires 09/29</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Section 6: Terms & Conditions Checkbox */}
+        <TouchableOpacity
+          style={styles.termsRow}
+          activeOpacity={0.8}
+          onPress={() => setIsTermsAgreed(!isTermsAgreed)}
+        >
+          <View style={[styles.checkbox, isTermsAgreed && styles.checkboxActive]}>
+            {isTermsAgreed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+          </View>
+          <Text style={styles.termsText}>
+            I agree to the{' '}
+            <Text
+              style={styles.termsLink}
+              onPress={() => navigation?.navigate('TermsConditions')}
+            >
+              Terms & Conditions and Cancellation Policy
+            </Text>
+          </Text>
+        </TouchableOpacity>
+
+        {/* Section 7: Bottom Action Buttons (Edit Details + Confirm Booking) */}
+        <View style={styles.bottomButtonsContainer}>
+          <TouchableOpacity
+            style={styles.editDetailsBtn}
+            activeOpacity={0.8}
+            onPress={() => setIsEditEventModalVisible(true)}
+          >
+            <Ionicons name="pencil" size={16} color="#E5093A" style={{ marginRight: 6 }} />
+            <Text style={styles.editDetailsBtnText}>Edit Details</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.confirmBookingBtn}
+            activeOpacity={0.9}
+            onPress={handleConfirmBooking}
+          >
+            <Text style={styles.confirmBookingBtnText}>Confirm Booking</Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 20 }} />
+      </ScrollView>
+
+      {/* Edit Event Details Modal */}
+      <Modal
+        visible={isEditEventModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsEditEventModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Event Details</Text>
+              <TouchableOpacity onPress={() => setIsEditEventModalVisible(false)}>
+                <Ionicons name="close" size={22} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+              <Text style={styles.inputLabel}>Event Type</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={eventType}
+                onChangeText={setEventType}
+                placeholder="e.g. Wedding Ceremony, Reception"
+              />
+
+              <Text style={styles.inputLabel}>Event Date</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={eventDate}
+                onChangeText={setEventDate}
+                placeholder="e.g. 25 November 2026 (Wednesday)"
+              />
+
+              <Text style={styles.inputLabel}>Event Time</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={eventTime}
+                onChangeText={setEventTime}
+                placeholder="e.g. 6:00 PM – 11:00 PM"
+              />
+
+              <Text style={styles.inputLabel}>Event Location</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={eventLocation}
+                onChangeText={setEventLocation}
+                placeholder="e.g. Royal Greens, Indore, MP"
+              />
+
+              <Text style={styles.inputLabel}>Guest Count</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={guestCount}
+                onChangeText={setGuestCount}
+                placeholder="e.g. 300 – 400 Guests"
+              />
+
+              <TouchableOpacity
+                style={styles.saveModalBtn}
+                onPress={() => {
+                  setIsEditEventModalVisible(false);
+                  Alert.alert('Updated', 'Event details saved successfully!');
+                }}
+              >
+                <Text style={styles.saveModalBtnText}>Save Event Details</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Meeting Details Modal */}
+      <Modal
+        visible={isEditMeetingModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsEditMeetingModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Meeting Details</Text>
+              <TouchableOpacity onPress={() => setIsEditMeetingModalVisible(false)}>
+                <Ionicons name="close" size={22} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
+              <Text style={styles.inputLabel}>Meeting Date</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={meetingDate}
+                onChangeText={setMeetingDate}
+              />
+
+              <Text style={styles.inputLabel}>Meeting Time</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={meetingTime}
+                onChangeText={setMeetingTime}
+              />
+
+              <Text style={styles.inputLabel}>Office Address</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={meetingLocation}
+                onChangeText={setMeetingLocation}
+              />
+
+              <TouchableOpacity
+                style={styles.saveModalBtn}
+                onPress={() => {
+                  setIsEditMeetingModalVisible(false);
+                  Alert.alert('Updated', 'Meeting details saved successfully!');
+                }}
+              >
+                <Text style={styles.saveModalBtnText}>Save Meeting Details</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Services Modal */}
+      <Modal
+        visible={isEditServicesModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsEditServicesModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Selected Package Services</Text>
+              <TouchableOpacity onPress={() => setIsEditServicesModalVisible(false)}>
+                <Ionicons name="close" size={22} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
+              {selectedServices.map((s, idx) => (
+                <View key={s.id} style={styles.modalServiceRow}>
+                  <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                  <Text style={styles.modalServiceName}>{s.name}</Text>
+                  <Text style={styles.modalServiceIncluded}>Included</Text>
+                </View>
+              ))}
+              <View style={styles.modalServiceRow}>
+                <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                <Text style={styles.modalServiceName}>2x Extra Flower Stands</Text>
+                <Text style={styles.modalServiceIncluded}>Included</Text>
+              </View>
+              <View style={styles.modalServiceRow}>
+                <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                <Text style={styles.modalServiceName}>On-site Team Coordination</Text>
+                <Text style={styles.modalServiceIncluded}>Included</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.saveModalBtn}
+                onPress={() => setIsEditServicesModalVisible(false)}
+              >
+                <Text style={styles.saveModalBtnText}>Close</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -498,559 +635,579 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAF5F2',
+    backgroundColor: '#FFFFFF',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingBottom: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2E4DE',
   },
-  headerBackBtn: {
-    padding: 4,
+  headerLeftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 6,
   },
-  headerTitleCol: {
+  titleColumn: {
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1A040A',
+  screenTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#1C1B1F',
+    letterSpacing: -0.3,
   },
-  headerTitleMaroon: {
-    color: '#8A072D',
+  screenTitleHighlight: {
+    color: '#D81B60',
   },
-  headerSubtitle: {
-    fontSize: 10,
-    color: '#736064',
-    marginTop: 1,
+  screenSubtitle: {
+    fontSize: 11.5,
+    color: '#556987',
+    marginTop: 2,
+    fontWeight: '400',
   },
-  scriptBadge: {
-    alignItems: 'flex-end',
-    marginLeft: 2,
-  },
-  scriptBadgeText: {
-    fontSize: 8.5,
-    fontStyle: 'italic',
-    fontWeight: '800',
-    color: '#8A072D',
-    lineHeight: 10.5,
-  },
-  scrollContent: {
-    padding: 12,
-    gap: 12,
-  },
-
-  // Service Summary Card
-  serviceSummaryCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F0D4CB',
-    padding: 10,
-    gap: 10,
-    elevation: 2,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  serviceImg: {
-    width: 100,
-    height: 120,
-    borderRadius: 10,
-    resizeMode: 'cover',
-    backgroundColor: '#FDECE6',
-  },
-  serviceInfoCol: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  serviceTagPriceRow: {
+  decorativeTag: {
+    backgroundColor: '#FFF1F2',
+    borderRadius: 22,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    borderWidth: 0.8,
+    borderColor: '#FFE4E6',
   },
-  categoryPill: {
-    backgroundColor: '#FDECE6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+  calendarGraphicBox: {
+    position: 'relative',
+    marginRight: 4,
   },
-  categoryPillText: {
-    fontSize: 9.5,
+  checkMiniBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -2,
+    backgroundColor: '#D81B60',
+    borderRadius: 5,
+    width: 10,
+    height: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tagTextCol: {
+    alignItems: 'flex-start',
+  },
+  decorativeLine1: {
+    fontSize: 9,
     fontWeight: '700',
-    color: '#8A072D',
-  },
-  priceBadge: {
-    alignItems: 'flex-end',
-  },
-  priceBadgeAmount: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#8A072D',
-  },
-  priceBadgeOnwards: {
-    fontSize: 8,
-    color: '#7A686C',
+    color: '#D81B60',
     lineHeight: 10,
   },
-  serviceHeading: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1A040A',
-    marginTop: 2,
-  },
-  serviceTaglineText: {
+  decorativeLine2: {
     fontSize: 9,
-    color: '#6E5C60',
-    lineHeight: 12,
-  },
-  featuresRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  featureItem: {
-    alignItems: 'center',
-  },
-  featureIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#FDECE6',
-    borderWidth: 1,
-    borderColor: '#F5CFC0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  featureLabel: {
-    fontSize: 7,
     fontWeight: '700',
-    color: '#4A3B3E',
-    textAlign: 'center',
-    lineHeight: 8.5,
+    color: '#D81B60',
+    lineHeight: 10,
+  },
+  decorativeLine3: {
+    fontSize: 8.5,
+    fontWeight: '600',
+    color: '#D81B60',
+    lineHeight: 10,
+  },
+  decorativeLine4: {
+    fontSize: 8,
+    fontWeight: '500',
+    color: '#D81B60',
+    lineHeight: 9,
+  },
+
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: '#FAF9FB',
+  },
+  scrollContent: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
 
   // Vendor Card
   vendorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F0D4CB',
-    padding: 10,
-    gap: 10,
-    elevation: 2,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 2 },
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
+    elevation: 2,
   },
-  vendorEmblem: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+  vendorTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
   },
-  emblemText1: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  emblemText2: {
-    fontSize: 5.5,
-    fontWeight: '700',
-    color: '#F3D09C',
-    letterSpacing: 0.5,
-    marginTop: 1,
+  vendorImage: {
+    width: 68,
+    height: 52,
+    borderRadius: 10,
+    marginRight: 10,
+    backgroundColor: '#FDECEF',
   },
   vendorDetailsCol: {
     flex: 1,
-    gap: 2,
   },
-  vendorNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  vendorNameText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#1A040A',
+  vendorName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 3,
   },
   vendorRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    marginBottom: 3,
   },
-  ratingText: {
+  vendorRatingScore: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginLeft: 3,
+  },
+  vendorReviewsCount: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#1A040A',
+    color: '#64748B',
+    marginLeft: 4,
   },
-  reviewsText: {
-    fontSize: 9.5,
-    color: '#736064',
-  },
-  pipeText: {
-    fontSize: 9.5,
-    color: '#D0BDBE',
-  },
-  expText: {
-    fontSize: 9.5,
-    fontWeight: '600',
-    color: '#736064',
-  },
-  vendorDistanceRow: {
+  vendorLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
   },
-  distanceText: {
-    fontSize: 9.5,
-    color: '#736064',
+  vendorLocationText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginLeft: 3,
+  },
+  viewProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  viewProfileBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D81B60',
+    marginRight: 2,
   },
   badgesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F8FAFC',
+    justifyContent: 'space-between',
   },
   badgePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#FDECE6',
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 4,
+    backgroundColor: '#FFF5F7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  badgePillText: {
-    fontSize: 8,
-    fontWeight: '600',
-    color: '#8A072D',
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#1E293B',
   },
 
-  // Info Cards (Date & Location)
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Section Cards
+  sectionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F0D4CB',
     padding: 12,
-    gap: 10,
-    elevation: 2,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FDECE6',
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 10,
   },
-  infoCol: {
+  sectionTitleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 7,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  editLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editLinkText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E53935',
+  },
+
+  // Event Details Grid
+  detailsGrid: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#556987',
     flex: 1,
   },
-  infoCardTitle: {
+  detailValue: {
     fontSize: 12.5,
-    fontWeight: '800',
-    color: '#1A040A',
-    marginBottom: 2,
-  },
-  infoDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  infoDetailText: {
-    fontSize: 10.5,
-    color: '#554246',
-  },
-  infoLocationText: {
-    fontSize: 11,
-    color: '#554246',
-    marginTop: 1,
-  },
-  editPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#8A072D',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Spacing.borderRadius.round,
-    gap: 3,
-  },
-  editPillBtnText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#8A072D',
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1.5,
+    textAlign: 'right',
   },
 
-  // Price Breakup Card
-  priceBreakupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F0D4CB',
-    padding: 12,
+  // Services Scroll
+  servicesScrollRow: {
+    flexDirection: 'row',
     gap: 8,
-    elevation: 2,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    paddingVertical: 4,
   },
-  priceBreakupTitle: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#1A040A',
+  serviceItemCard: {
+    width: 72,
+    alignItems: 'center',
+  },
+  serviceItemImg: {
+    width: 70,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: '#FDECEF',
     marginBottom: 4,
   },
-  priceRow: {
+  serviceItemName: {
+    fontSize: 9.5,
+    color: '#1E293B',
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 12,
+  },
+  moreServicesCard: {
+    width: 70,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
+  },
+  moreServicesPlus: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#E53935',
+  },
+  moreServicesText: {
+    fontSize: 8.5,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+
+  // Meeting Details Col
+  meetingDetailsCol: {
+    gap: 8,
+  },
+  meetingDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  meetingItemIcon: {
+    marginRight: 8,
+    marginTop: 2,
+  },
+  meetingLabel: {
+    fontSize: 12,
+    color: '#556987',
+    width: 110,
+  },
+  meetingValue: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+  },
+  meetingSubAddress: {
+    fontSize: 11,
+    color: '#556987',
+    marginTop: 1,
+  },
+
+  // Price Details
+  priceDetailsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  docIconSquare: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  priceAmountCol: {
+    flex: 1,
   },
   priceLabel: {
     fontSize: 11,
-    color: '#554246',
+    color: '#556987',
+    fontWeight: '500',
   },
   priceValue: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#1A040A',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#E53935',
   },
-  totalAmountBox: {
+  priceBadgeCol: {
+    alignItems: 'flex-end',
+  },
+  priceGreenPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FDECE6',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginBottom: 2,
   },
-  totalAmountLabel: {
-    fontSize: 12.5,
-    fontWeight: '800',
-    color: '#8A072D',
+  priceGreenText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#15803D',
   },
-  totalAmountValue: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#8A072D',
+  priceIncludedText: {
+    fontSize: 9.5,
+    color: '#64748B',
   },
 
-  // Safe & Secure Banner
-  safeSecureBanner: {
+  // Payment Method
+  paymentMethodCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAF0EB',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#F5CFC0',
-    borderRadius: 12,
-    padding: 10,
-    gap: 10,
+    borderColor: '#E2E8F0',
   },
-  shieldIconWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#8A072D',
-    alignItems: 'center',
-    justifyContent: 'center',
+  cardLogoBox: {
+    backgroundColor: '#1A1F71',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginRight: 10,
   },
-  safeSecureTextCol: {
+  visaText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    fontStyle: 'italic',
+  },
+  paymentCardInfo: {
     flex: 1,
   },
-  safeSecureTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#8A072D',
+  paymentCardName: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#1E293B',
   },
-  safeSecureSubtitle: {
-    fontSize: 9,
-    color: '#6E5C60',
+  paymentCardExpiry: {
+    fontSize: 10.5,
+    color: '#64748B',
     marginTop: 1,
   },
 
-  // Continue to Payment CTA
-  continuePaymentBtn: {
+  // Terms Row
+  termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: 12,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    marginRight: 8,
     justifyContent: 'center',
-    backgroundColor: '#8A072D',
-    paddingVertical: 13,
-    borderRadius: Spacing.borderRadius.round,
-    marginTop: 4,
-    gap: 6,
-    elevation: 3,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-  },
-  continuePaymentBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '800',
-  },
-  secureGatewayRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: 4,
+    backgroundColor: '#FFFFFF',
   },
-  secureGatewayText: {
-    fontSize: 10,
-    color: '#6E5C60',
+  checkboxActive: {
+    backgroundColor: '#E5093A',
+    borderColor: '#E5093A',
+  },
+  termsText: {
+    fontSize: 11,
+    color: '#334155',
+    flex: 1,
+    lineHeight: 16,
+  },
+  termsLink: {
+    color: '#E5093A',
     fontWeight: '600',
   },
 
-  // Modals Styling
+  // Bottom Buttons Container
+  bottomButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  editDetailsBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5093A',
+  },
+  editDetailsBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E5093A',
+  },
+  confirmBookingBtn: {
+    flex: 1.6,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#E5093A',
+    shadowColor: '#E5093A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  confirmBookingBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // Modals
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
   },
-  modalCard: {
-    width: '100%',
+  modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 18,
+    paddingBottom: 28,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 14,
   },
   modalTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1A040A',
-  },
-  slotOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7E9E3',
-  },
-  slotOptionRowActive: {
-    backgroundColor: '#FDECE6',
-    borderRadius: 8,
-  },
-  slotOptionDate: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#1A040A',
-  },
-  slotOptionDateActive: {
-    color: '#8A072D',
-    fontWeight: '800',
-  },
-  slotOptionTime: {
-    fontSize: 10,
-    color: '#7A686C',
-    marginTop: 1,
-  },
-
-  // Success Modal
-  successModalCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-  },
-  successIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#27A844',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  successTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#1A040A',
-  },
-  successSubtitle: {
-    fontSize: 11,
-    color: '#6E5C60',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-    lineHeight: 15,
-  },
-  successSummaryBox: {
-    width: '100%',
-    backgroundColor: '#FAF5F2',
-    borderRadius: 10,
-    padding: 12,
-    gap: 6,
-    marginBottom: 16,
-  },
-  successRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  successLabel: {
-    fontSize: 11,
-    color: '#736064',
-  },
-  successVal: {
-    fontSize: 11.5,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1A040A',
+    color: '#1E293B',
   },
-  successValGreen: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#27A844',
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+    marginTop: 8,
+    marginBottom: 4,
   },
-  viewMyBookingsBtn: {
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#1E293B',
+    backgroundColor: '#F8FAFC',
+  },
+  saveModalBtn: {
+    backgroundColor: '#E5093A',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  saveModalBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  modalServiceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#8A072D',
-    width: '100%',
-    paddingVertical: 12,
-    borderRadius: Spacing.borderRadius.round,
-    gap: 6,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  viewMyBookingsBtnText: {
-    color: '#FFFFFF',
+  modalServiceName: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+    marginLeft: 8,
+  },
+  modalServiceIncluded: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
   },
 });

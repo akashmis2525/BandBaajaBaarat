@@ -103,20 +103,24 @@ export const SettingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out from Band Baaja Baarat?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Logged Out', 'You have been logged out successfully.');
+    if (navigation?.navigate) {
+      navigation.navigate('Logout');
+    } else {
+      Alert.alert(
+        'Log Out',
+        'Are you sure you want to log out from Band Baaja Baarat?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Log Out',
+            style: 'destructive',
+            onPress: () => {
+              Alert.alert('Logged Out', 'You have been logged out successfully.');
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleOpenEditProfile = () => {
@@ -504,7 +508,13 @@ export const SettingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
             <TouchableOpacity
               style={styles.menuItemRow}
               activeOpacity={0.7}
-              onPress={() => setShowTermsModal(true)}
+              onPress={() => {
+                if (navigation?.navigate) {
+                  navigation.navigate('TermsConditions');
+                } else {
+                  setShowTermsModal(true);
+                }
+              }}
             >
               <View style={[styles.iconCircle, { backgroundColor: theme.iconCircleBg }]}>
                 <Ionicons name="document-text-outline" size={18} color="#8A072D" />

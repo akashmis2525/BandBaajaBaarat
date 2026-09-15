@@ -24,6 +24,8 @@ interface ChatMessage {
   text: string;
   time: string;
   read?: boolean;
+  hasMeetingAction?: boolean;
+  hasQuotationAction?: boolean;
 }
 
 export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = ({
@@ -66,6 +68,20 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
       sender: 'vendor',
       text: "Yes, we can arrange LED dhol and Punjabi beats. There may be a small additional charge for LED dhol. I'll share the details with you.",
       time: '10:25 AM',
+    },
+    {
+      id: 'm6',
+      sender: 'vendor',
+      text: 'Would you like to schedule an in-person or video meeting to discuss decoration themes, pricing, and customize the package?',
+      time: '10:28 AM',
+      hasMeetingAction: true,
+    },
+    {
+      id: 'm7',
+      sender: 'vendor',
+      text: "📄 Official Quotation Generated: ₹ 85,000 for Stage Decoration & Event Setup. Let's discuss and finalize the best price!",
+      time: '11:30 AM',
+      hasQuotationAction: true,
     },
   ]);
 
@@ -191,14 +207,25 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
             </View>
           </View>
 
-          {/* View Profile Button */}
-          <TouchableOpacity
-            style={styles.viewProfileBtn}
-            activeOpacity={0.8}
-            onPress={() => navigation?.navigate('RateReview')}
-          >
-            <Text style={styles.viewProfileBtnText}>View Profile</Text>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={{ gap: 6, alignItems: 'flex-end' }}>
+            <TouchableOpacity
+              style={styles.scheduleMeetingTopBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('ScheduleMeeting')}
+            >
+              <Ionicons name="calendar" size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={styles.scheduleMeetingTopBtnText}>Schedule Meeting</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewProfileBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('RateReview')}
+            >
+              <Text style={styles.viewProfileBtnText}>View Profile</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Message Stream */}
@@ -249,6 +276,28 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
                     >
                       {msg.text}
                     </Text>
+
+                    {msg.hasMeetingAction && (
+                      <TouchableOpacity
+                        style={styles.inlineScheduleBtn}
+                        activeOpacity={0.85}
+                        onPress={() => navigation?.navigate('ScheduleMeeting')}
+                      >
+                        <Ionicons name="calendar" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={styles.inlineScheduleBtnText}>Schedule Meeting</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {msg.hasQuotationAction && (
+                      <TouchableOpacity
+                        style={[styles.inlineScheduleBtn, { backgroundColor: '#D81B60', marginTop: 8 }]}
+                        activeOpacity={0.85}
+                        onPress={() => navigation?.navigate('NegotiatePrice')}
+                      >
+                        <Ionicons name="pricetags" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={styles.inlineScheduleBtnText}>Negotiate Price (₹ 85,000) →</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   <View
@@ -282,6 +331,26 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.quickChipsScroll}
           >
+            {/* Negotiate Price Chip */}
+            <TouchableOpacity
+              style={[styles.chipBtn, { backgroundColor: '#D81B60', borderColor: '#D81B60' }]}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('NegotiatePrice')}
+            >
+              <Ionicons name="pricetag" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>Negotiate Price</Text>
+            </TouchableOpacity>
+
+            {/* 0. Schedule Meeting */}
+            <TouchableOpacity
+              style={[styles.chipBtn, styles.chipBtnSchedule]}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('ScheduleMeeting')}
+            >
+              <Ionicons name="calendar" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={styles.chipTextSchedule}>Schedule Meeting</Text>
+            </TouchableOpacity>
+
             {/* 1. View Booking */}
             <TouchableOpacity
               style={styles.chipBtn}
@@ -687,6 +756,43 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#8A072D',
+  },
+  chipBtnSchedule: {
+    backgroundColor: '#D81B60',
+    borderColor: '#D81B60',
+  },
+  chipTextSchedule: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  scheduleMeetingTopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D81B60',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  scheduleMeetingTopBtnText: {
+    fontSize: 10,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  inlineScheduleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D81B60',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  inlineScheduleBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   // Input Bar

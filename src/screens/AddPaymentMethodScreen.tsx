@@ -12,9 +12,9 @@ import {
   Alert,
   KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Spacing, Typography } from '../theme';
+import { Colors } from '../theme';
 
 interface AddPaymentMethodScreenProps {
   navigation?: any;
@@ -28,22 +28,26 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<'card' | 'upi' | 'netbanking' | 'wallets'>('card');
+  const initialTab = route?.params?.initialTab || 'card';
+  const [activeTab, setActiveTab] = useState<'card' | 'upi' | 'wallet' | 'netbanking'>(initialTab);
 
-  // Card form state
+  // Card Form State
   const [cardNumber, setCardNumber] = useState('');
+  const [cardHolderName, setCardHolderName] = useState('Aakash Mishra');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
-  const [cardholderName, setCardholderName] = useState('');
+  const [showCvv, setShowCvv] = useState(false);
   const [isDefault, setIsDefault] = useState(true);
 
-  // UPI form state
+  // UPI Form State
   const [upiId, setUpiId] = useState('');
+  const [selectedUpiApp, setSelectedUpiApp] = useState('Google Pay');
 
-  // Wallet form state
-  const [walletPhone, setWalletPhone] = useState('+91 91234 56789');
+  // Wallet Form State
+  const [walletNumber, setWalletNumber] = useState('+91 97133 32997');
+  const [selectedWallet, setSelectedWallet] = useState('Paytm');
 
-  // Net banking selected bank
+  // Net Banking Form State
   const [selectedBank, setSelectedBank] = useState('HDFC Bank');
 
   const handleBack = () => {
@@ -63,77 +67,88 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
   };
 
   const handleExpiryChange = (text: string) => {
-    const cleaned = text.replace(/\D/g, '').slice(0, 4);
+    let cleaned = text.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length >= 3) {
-      setExpiryDate(`${cleaned.slice(0, 2)}/${cleaned.slice(2)}`);
-    } else {
-      setExpiryDate(cleaned);
+      cleaned = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
     }
+    setExpiryDate(cleaned);
+  };
+
+  const handleCvvChange = (text: string) => {
+    const cleaned = text.replace(/\D/g, '').slice(0, 4);
+    setCvv(cleaned);
   };
 
   const handleSaveCard = () => {
     if (cardNumber.replace(/\s/g, '').length < 16) {
-      Alert.alert('Invalid Card Number', 'Please enter a complete 16-digit card number.');
+      Alert.alert('Incomplete Card Number', 'Please enter a valid 16-digit card number.');
+      return;
+    }
+    if (!cardHolderName.trim()) {
+      Alert.alert('Missing Name', 'Please enter the cardholder name.');
       return;
     }
     if (expiryDate.length < 5) {
-      Alert.alert('Invalid Expiry Date', 'Please enter expiry date in MM/YY format.');
+      Alert.alert('Invalid Expiry', 'Please enter expiry date in MM/YY format.');
       return;
     }
     if (cvv.length < 3) {
-      Alert.alert('Invalid CVV', 'Please enter a valid 3-digit CVV.');
-      return;
-    }
-    if (!cardholderName.trim()) {
-      Alert.alert('Name Required', 'Please enter the cardholder name.');
+      Alert.alert('Invalid CVV', 'Please enter a 3 or 4 digit CVV code.');
       return;
     }
 
     Alert.alert(
-      'Card Saved Successfully! 🎉',
-      `Your card ending in ${cardNumber.slice(-4)} has been verified and added to your saved payment methods.`,
+      'Card Saved Successfully',
+      'Your card has been securely saved and encrypted for fast checkout.',
       [
         {
-          text: 'OK',
-          onPress: handleBack,
+          text: 'Done',
+          onPress: () => {
+            if (navigation?.goBack) {
+              navigation.goBack();
+            }
+          },
         },
       ]
     );
   };
 
   const handleSaveUpi = () => {
-    if (!upiId.includes('@')) {
-      Alert.alert('Invalid UPI ID', 'Please enter a valid UPI ID (e.g. name@okhdfcbank)');
+    if (!upiId.trim() || !upiId.includes('@')) {
+      Alert.alert('Invalid UPI ID', 'Please enter a valid UPI VPA (e.g., username@okhdfcbank).');
       return;
     }
-    Alert.alert(
-      'UPI Account Linked! 🎉',
-      `Your UPI ID ${upiId} has been verified and linked successfully.`,
-      [{ text: 'OK', onPress: handleBack }]
-    );
+    Alert.alert('UPI Added', 'Your UPI ID has been verified and saved.', [
+      {
+        text: 'Done',
+        onPress: () => navigation?.goBack?.(),
+      },
+    ]);
   };
 
   const handleSaveWallet = () => {
-    Alert.alert(
-      'Wallet Linked! 🎉',
-      `Your wallet for ${walletPhone} has been verified via OTP and linked.`,
-      [{ text: 'OK', onPress: handleBack }]
-    );
+    Alert.alert('Wallet Linked', `${selectedWallet} has been linked to your account.`, [
+      {
+        text: 'Done',
+        onPress: () => navigation?.goBack?.(),
+      },
+    ]);
   };
 
-  const handleSaveBank = () => {
-    Alert.alert(
-      'Bank Account Linked! 🎉',
-      `Your ${selectedBank} account has been linked for seamless net banking transactions.`,
-      [{ text: 'OK', onPress: handleBack }]
-    );
+  const handleSaveNetBanking = () => {
+    Alert.alert('Bank Selected', `${selectedBank} saved as your preferred net banking option.`, [
+      {
+        text: 'Done',
+        onPress: () => navigation?.goBack?.(),
+      },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
+      {/* Top Header */}
       <View
         style={[
           styles.headerRow,
@@ -142,28 +157,83 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
               Platform.OS === 'android'
                 ? (StatusBar.currentHeight || 24) + 6
                 : insets.top > 0
-                ? insets.top + 4
-                : 20,
+                ? insets.top + 2
+                : 16,
           },
         ]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color="#1A040A" />
-        </TouchableOpacity>
+        <View style={styles.headerLeftContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            activeOpacity={0.7}
+            onPress={handleBack}
+          >
+            <Ionicons name="arrow-back" size={24} color="#1C1B1F" />
+          </TouchableOpacity>
 
-        <View style={styles.headerTitleCol}>
-          <Text style={styles.headerTitle}>
-            Add <Text style={styles.headerTitleMaroon}>Payment Method</Text>
-          </Text>
-          <Text style={styles.headerSubtitle}>Choose a payment method and add your details</Text>
+          <View style={styles.titleColumn}>
+            <Text style={styles.screenTitle}>
+              Add New{' '}
+              <Text style={styles.screenTitleHighlight}>
+                {activeTab === 'card'
+                  ? 'Card'
+                  : activeTab === 'upi'
+                  ? 'UPI'
+                  : activeTab === 'wallet'
+                  ? 'Wallet'
+                  : 'Net Banking'}
+              </Text>
+            </Text>
+            <Text style={styles.screenSubtitle}>
+              {activeTab === 'card'
+                ? 'Enter your card details securely'
+                : activeTab === 'upi'
+                ? 'Enter your UPI VPA to link'
+                : activeTab === 'wallet'
+                ? 'Link your mobile wallet'
+                : 'Choose your preferred bank'}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.scriptBadge}>
-          <Text style={styles.scriptBadgeTop}>Secure</Text>
-          <Text style={styles.scriptBadgeMid}>Simple</Text>
-          <Text style={styles.scriptBadgeSub}>Faster</Text>
-          <Text style={styles.scriptBadgeBot}>Payments ♡</Text>
+        {/* Top Right Decorative Tag */}
+        <View style={styles.decorativeTag}>
+          <View style={styles.cardGraphicBox}>
+            <Ionicons name="card" size={16} color="#D81B60" />
+            <View style={styles.cardCheckBadge}>
+              <Ionicons name="checkmark-sharp" size={8} color="#FFFFFF" />
+            </View>
+          </View>
+          <View style={styles.tagTextCol}>
+            <Text style={styles.decorativeLine1}>Secure</Text>
+            <Text style={styles.decorativeLine2}>Payments</Text>
+            <Text style={styles.decorativeLine3}>Happier Events ♡</Text>
+          </View>
         </View>
+      </View>
+
+      {/* Payment Type Tabs */}
+      <View style={styles.tabBarContainer}>
+        {[
+          { id: 'card', label: 'Card', icon: 'card-outline' },
+          { id: 'upi', label: 'UPI', icon: 'flash-outline' },
+          { id: 'wallet', label: 'Wallet', icon: 'wallet-outline' },
+          { id: 'netbanking', label: 'Net Banking', icon: 'business-outline' },
+        ].map((tab) => {
+          const isSelected = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tabItem, isSelected && styles.tabItemActive]}
+              onPress={() => setActiveTab(tab.id as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabItemText, isSelected && styles.tabItemTextActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <KeyboardAvoidingView
@@ -174,384 +244,367 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Top 4 Category Selector Tabs */}
-          <View style={styles.categoryTabsRow}>
-            {/* 1. Credit / Debit Card */}
-            <TouchableOpacity
-              style={[
-                styles.categoryTabCard,
-                activeTab === 'card' && styles.categoryTabCardActive,
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setActiveTab('card')}
-            >
-              <Ionicons
-                name="card"
-                size={22}
-                color={activeTab === 'card' ? '#8A072D' : '#68595D'}
-              />
-              <Text
-                style={[
-                  styles.categoryTabLabel,
-                  activeTab === 'card' && styles.categoryTabLabelActive,
-                ]}
-              >
-                Credit / Debit Card
-              </Text>
-            </TouchableOpacity>
-
-            {/* 2. UPI */}
-            <TouchableOpacity
-              style={[
-                styles.categoryTabCard,
-                activeTab === 'upi' && styles.categoryTabCardActive,
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setActiveTab('upi')}
-            >
-              <View style={styles.upiIconRow}>
-                <Text
-                  style={[
-                    styles.upiIconText,
-                    activeTab === 'upi' && { color: '#8A072D' },
-                  ]}
-                >
-                  UPI
-                </Text>
-                <View style={styles.upiIconDots}>
-                  <View style={styles.upiGreenDot} />
-                  <View style={styles.upiOrangeDot} />
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.categoryTabLabel,
-                  activeTab === 'upi' && styles.categoryTabLabelActive,
-                ]}
-              >
-                UPI
-              </Text>
-            </TouchableOpacity>
-
-            {/* 3. Net Banking */}
-            <TouchableOpacity
-              style={[
-                styles.categoryTabCard,
-                activeTab === 'netbanking' && styles.categoryTabCardActive,
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setActiveTab('netbanking')}
-            >
-              <MaterialCommunityIcons
-                name="bank-outline"
-                size={22}
-                color={activeTab === 'netbanking' ? '#8A072D' : '#68595D'}
-              />
-              <Text
-                style={[
-                  styles.categoryTabLabel,
-                  activeTab === 'netbanking' && styles.categoryTabLabelActive,
-                ]}
-              >
-                Net Banking
-              </Text>
-            </TouchableOpacity>
-
-            {/* 4. Wallets */}
-            <TouchableOpacity
-              style={[
-                styles.categoryTabCard,
-                activeTab === 'wallets' && styles.categoryTabCardActive,
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setActiveTab('wallets')}
-            >
-              <Ionicons
-                name="wallet-outline"
-                size={22}
-                color={activeTab === 'wallets' ? '#8A072D' : '#68595D'}
-              />
-              <Text
-                style={[
-                  styles.categoryTabLabel,
-                  activeTab === 'wallets' && styles.categoryTabLabelActive,
-                ]}
-              >
-                Wallets
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Form Content Depending on Selected Tab */}
+          {/* TAB 1: CREDIT / DEBIT CARD */}
           {activeTab === 'card' && (
-            <View style={styles.formSection}>
-              {/* Card Details Header & Supported Card Logos */}
-              <View style={styles.formHeaderRow}>
-                <Text style={styles.formTitle}>Card Details</Text>
+            <View>
+              {/* We Accept Banner */}
+              <View style={styles.weAcceptCard}>
+                <View style={styles.weAcceptTextCol}>
+                  <Text style={styles.weAcceptTitle}>We Accept</Text>
+                  <Text style={styles.weAcceptSubtitle}>
+                    All major debit and credit cards
+                  </Text>
+                </View>
+
                 <View style={styles.cardLogosRow}>
-                  {/* Visa */}
-                  <Text style={styles.visaLogo}>VISA</Text>
-                  {/* Mastercard */}
-                  <View style={styles.mcMini}>
-                    <View style={styles.mcRed} />
-                    <View style={styles.mcYellow} />
+                  {/* VISA */}
+                  <View style={styles.logoPill}>
+                    <Text style={styles.visaPillText}>VISA</Text>
                   </View>
+
+                  {/* Mastercard */}
+                  <View style={styles.logoPill}>
+                    <View style={styles.mcCirclesWrap}>
+                      <View style={[styles.mcCircleMini, { backgroundColor: '#EB001B' }]} />
+                      <View style={[styles.mcCircleMini, { backgroundColor: '#F79E1B', marginLeft: -6 }]} />
+                    </View>
+                  </View>
+
                   {/* RuPay */}
-                  <Text style={styles.rupayLogo}>RuPay❯</Text>
+                  <View style={styles.logoPill}>
+                    <Text style={styles.rupayText}>RuPay</Text>
+                  </View>
+
                   {/* Amex */}
-                  <View style={styles.amexBox}>
-                    <Text style={styles.amexText}>AMEX</Text>
+                  <View style={[styles.logoPill, { backgroundColor: '#006FCF', borderColor: '#006FCF' }]}>
+                    <Text style={styles.amexText}>AMERICAN{'\n'}EXPRESS</Text>
                   </View>
                 </View>
               </View>
 
-              {/* Card Number */}
-              <Text style={styles.fieldLabel}>Card Number</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="card-outline" size={18} color="#8A072D" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInputField}
-                  placeholder="1234 5678 9012 3456"
-                  placeholderTextColor="#A08C90"
-                  keyboardType="numeric"
-                  maxLength={19}
-                  value={cardNumber}
-                  onChangeText={handleCardNumberChange}
-                />
+              {/* Field 1: Card Number */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Card Number</Text>
+                <View style={styles.inputFieldBox}>
+                  <Ionicons name="card-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
+                  <TextInput
+                    style={styles.textInputMain}
+                    value={cardNumber}
+                    onChangeText={handleCardNumberChange}
+                    placeholder="Enter card number"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="number-pad"
+                    maxLength={19}
+                  />
+                  {!cardNumber && (
+                    <Text style={styles.placeholderSample}>1234 5678 9012 3456</Text>
+                  )}
+                </View>
               </View>
 
-              {/* Expiry Date & CVV Row */}
-              <View style={styles.twoFieldsRow}>
+              {/* Field 2: Card Holder Name */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Card Holder Name</Text>
+                <View style={styles.inputFieldBox}>
+                  <Ionicons name="person-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
+                  <TextInput
+                    style={styles.textInputMain}
+                    value={cardHolderName}
+                    onChangeText={setCardHolderName}
+                    placeholder="Enter name on card"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
+
+              {/* Fields 3 & 4: Expiry Date & CVV (Side by Side) */}
+              <View style={styles.rowTwoCols}>
                 {/* Expiry Date */}
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.fieldLabel}>Expiry Date</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={18}
-                      color="#8A072D"
-                      style={styles.inputIcon}
-                    />
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.inputLabel}>Expiry Date</Text>
+                  <View style={styles.inputFieldBox}>
+                    <Ionicons name="calendar-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
                     <TextInput
-                      style={styles.textInputField}
-                      placeholder="MM / YY"
-                      placeholderTextColor="#A08C90"
-                      keyboardType="numeric"
-                      maxLength={5}
+                      style={styles.textInputMain}
                       value={expiryDate}
                       onChangeText={handleExpiryChange}
+                      placeholder="MM / YY"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="number-pad"
+                      maxLength={5}
                     />
                   </View>
                 </View>
 
                 {/* CVV */}
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.fieldLabel}>CVV</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons
-                      name="lock-closed-outline"
-                      size={18}
-                      color="#8A072D"
-                      style={styles.inputIcon}
-                    />
+                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={styles.inputLabel}>CVV</Text>
+                  <View style={styles.inputFieldBox}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
                     <TextInput
-                      style={styles.textInputField}
-                      placeholder="123"
-                      placeholderTextColor="#A08C90"
-                      keyboardType="numeric"
-                      maxLength={4}
-                      secureTextEntry
+                      style={styles.textInputMain}
                       value={cvv}
-                      onChangeText={setCvv}
+                      onChangeText={handleCvvChange}
+                      placeholder="Enter CVV"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="number-pad"
+                      secureTextEntry={!showCvv}
+                      maxLength={4}
                     />
                     <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() =>
-                        Alert.alert(
-                          'CVV Number',
-                          '3 or 4-digit security code on the back of your card.'
-                        )
-                      }
+                      style={styles.eyeBtn}
+                      onPress={() => setShowCvv(!showCvv)}
                     >
-                      <Ionicons name="information-circle-outline" size={16} color="#8E7C80" />
+                      <Ionicons
+                        name={showCvv ? 'eye-outline' : 'eye-off-outline'}
+                        size={18}
+                        color="#94A3B8"
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
 
-              {/* Cardholder Name */}
-              <Text style={styles.fieldLabel}>Cardholder Name</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="person-outline"
-                  size={18}
-                  color="#8A072D"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.textInputField}
-                  placeholder="Name as on card"
-                  placeholderTextColor="#A08C90"
-                  value={cardholderName}
-                  onChangeText={setCardholderName}
-                  autoCapitalize="words"
-                />
-              </View>
-
-              {/* Default Payment Checkbox */}
+              {/* Set as Default Checkbox */}
               <TouchableOpacity
-                style={styles.checkboxRow}
+                style={styles.defaultCheckboxRow}
                 activeOpacity={0.8}
                 onPress={() => setIsDefault(!isDefault)}
               >
-                <View style={[styles.checkboxSquare, isDefault && styles.checkboxSquareActive]}>
-                  {isDefault && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
+                <View
+                  style={[
+                    styles.radioCheckCircle,
+                    isDefault && styles.radioCheckCircleActive,
+                  ]}
+                >
+                  {isDefault && (
+                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  )}
                 </View>
-                <Text style={styles.checkboxLabel}>Set as default payment method</Text>
+
+                <View style={styles.defaultTextCol}>
+                  <Text style={styles.defaultMainText}>
+                    Set as Default Payment Method
+                  </Text>
+                  <Text style={styles.defaultSubText}>
+                    This card will be used for future bookings
+                  </Text>
+                </View>
               </TouchableOpacity>
 
               {/* Save Card Button */}
               <TouchableOpacity
-                style={styles.submitBtn}
+                style={styles.saveCardButton}
                 activeOpacity={0.85}
                 onPress={handleSaveCard}
               >
-                <Text style={styles.submitBtnText}>Save Card</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                <Text style={styles.saveCardButtonText}>Save Card</Text>
               </TouchableOpacity>
+
+              {/* Encryption Assurance */}
+              <View style={styles.encryptionRow}>
+                <Ionicons name="shield-checkmark-outline" size={16} color="#4A5568" />
+                <Text style={styles.encryptionText}>
+                  Your card details are encrypted and secure
+                </Text>
+              </View>
+
+              {/* Bottom Security Card */}
+              <View style={styles.safeBannerCard}>
+                <View style={styles.safeShieldGraphicBox}>
+                  <Ionicons name="shield-checkmark" size={44} color="#F43F5E" />
+                  <View style={styles.lockInsideShield}>
+                    <Ionicons name="lock-closed" size={12} color="#FFFFFF" />
+                  </View>
+                </View>
+                <View style={styles.safeTextCol}>
+                  <Text style={styles.safeTitle}>Safe. Secure. Hassle-Free.</Text>
+                  <Text style={styles.safeSubtitle}>
+                    Your payment information is protected with industry-standard encryption.
+                  </Text>
+                </View>
+              </View>
             </View>
           )}
 
+          {/* TAB 2: UPI */}
           {activeTab === 'upi' && (
-            <View style={styles.formSection}>
-              <Text style={styles.formTitle}>Add UPI ID</Text>
-              <Text style={styles.fieldLabel}>Virtual Payment Address (VPA)</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="qr-code-outline" size={18} color="#8A072D" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInputField}
-                  placeholder="e.g. amit.sharma@okicici"
-                  placeholderTextColor="#A08C90"
-                  value={upiId}
-                  onChangeText={setUpiId}
-                  autoCapitalize="none"
-                />
+            <View>
+              <Text style={styles.subSectionTitle}>Popular UPI Apps</Text>
+              <View style={styles.upiAppsRow}>
+                {['Google Pay', 'PhonePe', 'Paytm', 'BHIM'].map((app) => (
+                  <TouchableOpacity
+                    key={app}
+                    style={[
+                      styles.upiAppTile,
+                      selectedUpiApp === app && styles.upiAppTileActive,
+                    ]}
+                    onPress={() => setSelectedUpiApp(app)}
+                  >
+                    <Ionicons
+                      name="flash"
+                      size={20}
+                      color={selectedUpiApp === app ? '#D81B60' : '#475569'}
+                    />
+                    <Text
+                      style={[
+                        styles.upiAppText,
+                        selectedUpiApp === app && styles.upiAppTextActive,
+                      ]}
+                    >
+                      {app}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Enter UPI ID / VPA</Text>
+                <View style={styles.inputFieldBox}>
+                  <Ionicons name="at-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
+                  <TextInput
+                    style={styles.textInputMain}
+                    value={upiId}
+                    onChangeText={setUpiId}
+                    placeholder="e.g. mobile@okhdfcbank"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+
+              {/* Popular UPI Handles */}
+              <View style={styles.handlesWrap}>
+                {['@okhdfcbank', '@okaxis', '@okicici', '@paytm', '@ybl'].map((h) => (
+                  <TouchableOpacity
+                    key={h}
+                    style={styles.handleChip}
+                    onPress={() => {
+                      const prefix = upiId.split('@')[0] || '9713332997';
+                      setUpiId(`${prefix}${h}`);
+                    }}
+                  >
+                    <Text style={styles.handleChipText}>{h}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               <TouchableOpacity
-                style={styles.submitBtn}
+                style={[styles.saveCardButton, { marginTop: 24 }]}
                 activeOpacity={0.85}
                 onPress={handleSaveUpi}
               >
-                <Text style={styles.submitBtnText}>Verify & Save UPI</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                <Text style={styles.saveCardButtonText}>Verify & Save UPI</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {activeTab === 'netbanking' && (
-            <View style={styles.formSection}>
-              <Text style={styles.formTitle}>Select Your Bank</Text>
-              <View style={styles.banksGrid}>
-                {['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra', 'Punjab National Bank'].map(
-                  (b) => (
-                    <TouchableOpacity
-                      key={b}
-                      style={[styles.bankChip, selectedBank === b && styles.bankChipActive]}
-                      onPress={() => setSelectedBank(b)}
-                    >
-                      <Text
-                        style={[
-                          styles.bankChipText,
-                          selectedBank === b && styles.bankChipTextActive,
-                        ]}
-                      >
-                        {b}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
+          {/* TAB 3: WALLET */}
+          {activeTab === 'wallet' && (
+            <View>
+              <Text style={styles.subSectionTitle}>Select Wallet</Text>
+              <View style={styles.walletsList}>
+                {['Paytm Wallet', 'PhonePe Wallet', 'Amazon Pay', 'Mobikwik'].map((w) => (
+                  <TouchableOpacity
+                    key={w}
+                    style={[
+                      styles.walletItemCard,
+                      selectedWallet === w && styles.walletItemCardActive,
+                    ]}
+                    onPress={() => setSelectedWallet(w)}
+                  >
+                    <Ionicons
+                      name="wallet-outline"
+                      size={22}
+                      color={selectedWallet === w ? '#D81B60' : '#475569'}
+                    />
+                    <Text style={styles.walletItemText}>{w}</Text>
+                    <Ionicons
+                      name={
+                        selectedWallet === w
+                          ? 'radio-button-on'
+                          : 'radio-button-off'
+                      }
+                      size={20}
+                      color={selectedWallet === w ? '#D81B60' : '#CBD5E1'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Registered Mobile Number</Text>
+                <View style={styles.inputFieldBox}>
+                  <Ionicons name="call-outline" size={20} color="#64748B" style={styles.inputLeftIcon} />
+                  <TextInput
+                    style={styles.textInputMain}
+                    value={walletNumber}
+                    onChangeText={setWalletNumber}
+                    placeholder="+91 98765 43210"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="phone-pad"
+                  />
+                </View>
               </View>
 
               <TouchableOpacity
-                style={styles.submitBtn}
-                activeOpacity={0.85}
-                onPress={handleSaveBank}
-              >
-                <Text style={styles.submitBtnText}>Link {selectedBank}</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {activeTab === 'wallets' && (
-            <View style={styles.formSection}>
-              <Text style={styles.formTitle}>Link Wallet</Text>
-              <Text style={styles.fieldLabel}>Mobile Number Linked with Wallet</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="call-outline" size={18} color="#8A072D" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInputField}
-                  placeholder="+91 91234 56789"
-                  placeholderTextColor="#A08C90"
-                  keyboardType="phone-pad"
-                  value={walletPhone}
-                  onChangeText={setWalletPhone}
-                />
-              </View>
-
-              <TouchableOpacity
-                style={styles.submitBtn}
+                style={[styles.saveCardButton, { marginTop: 24 }]}
                 activeOpacity={0.85}
                 onPress={handleSaveWallet}
               >
-                <Text style={styles.submitBtnText}>Link Wallet via OTP</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                <Text style={styles.saveCardButtonText}>Link {selectedWallet}</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Card Information Secure Notice */}
-          <View style={styles.securityNoticeCard}>
-            <View style={styles.shieldRedCircle}>
-              <Ionicons name="shield-checkmark" size={20} color="#8A072D" />
-            </View>
-            <View style={styles.securityNoticeCol}>
-              <Text style={styles.securityNoticeTitle}>Your card information is secure</Text>
-              <Text style={styles.securityNoticeSubtitle}>
-                We use industry-standard encryption to keep your details safe.
-              </Text>
-            </View>
-          </View>
+          {/* TAB 4: NET BANKING */}
+          {activeTab === 'netbanking' && (
+            <View>
+              <Text style={styles.subSectionTitle}>Popular Banks</Text>
+              <View style={styles.banksGrid}>
+                {[
+                  'HDFC Bank',
+                  'ICICI Bank',
+                  'State Bank of India',
+                  'Axis Bank',
+                  'Kotak Mahindra Bank',
+                  'Punjab National Bank',
+                ].map((bank) => (
+                  <TouchableOpacity
+                    key={bank}
+                    style={[
+                      styles.bankTile,
+                      selectedBank === bank && styles.bankTileActive,
+                    ]}
+                    onPress={() => setSelectedBank(bank)}
+                  >
+                    <FontAwesome5
+                      name="university"
+                      size={18}
+                      color={selectedBank === bank ? '#D81B60' : '#475569'}
+                    />
+                    <Text
+                      style={[
+                        styles.bankTileText,
+                        selectedBank === bank && styles.bankTileTextActive,
+                      ]}
+                    >
+                      {bank}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-          {/* 4 Security Badges Row */}
-          <View style={styles.badgesRow}>
-            {/* 1. 100% Secure */}
-            <View style={styles.badgeCol}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#8A072D" />
-              <Text style={styles.badgeText}>100% Secure</Text>
+              <TouchableOpacity
+                style={[styles.saveCardButton, { marginTop: 24 }]}
+                activeOpacity={0.85}
+                onPress={handleSaveNetBanking}
+              >
+                <Text style={styles.saveCardButtonText}>Continue with {selectedBank}</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* 2. Encrypted Payments */}
-            <View style={styles.badgeCol}>
-              <Ionicons name="lock-closed-outline" size={20} color="#8A072D" />
-              <Text style={styles.badgeText}>Encrypted{'\n'}Payments</Text>
-            </View>
-
-            {/* 3. PCI DSS Compliant */}
-            <View style={styles.badgeCol}>
-              <Ionicons name="shield-outline" size={20} color="#8A072D" />
-              <Text style={styles.badgeText}>PCI DSS{'\n'}Compliant</Text>
-            </View>
-
-            {/* 4. Trusted by Millions */}
-            <View style={styles.badgeCol}>
-              <Ionicons name="card-outline" size={20} color="#8A072D" />
-              <Text style={styles.badgeText}>Trusted by{'\n'}Millions</Text>
-            </View>
-          </View>
-
-          <View style={{ height: 25 }} />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -561,370 +614,433 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAF5F2',
+    backgroundColor: '#FFFFFF',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingBottom: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2E4DE',
   },
-  backBtn: {
-    padding: 6,
+  headerLeftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  titleColumn: {
+    flex: 1,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1C1B1F',
+    letterSpacing: -0.3,
+  },
+  screenTitleHighlight: {
+    color: '#D81B60',
+  },
+  screenSubtitle: {
+    fontSize: 12,
+    color: '#556987',
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  decorativeTag: {
+    backgroundColor: '#FDECEF',
+    borderRadius: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardGraphicBox: {
+    position: 'relative',
     marginRight: 6,
   },
-  headerTitleCol: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1A040A',
-  },
-  headerTitleMaroon: {
-    color: '#8A072D',
-  },
-  headerSubtitle: {
-    fontSize: 10.5,
-    color: '#736064',
-    marginTop: 1,
-  },
-  scriptBadge: {
-    alignItems: 'flex-end',
-    marginLeft: 4,
-  },
-  scriptBadgeTop: {
-    fontSize: 8,
-    fontStyle: 'italic',
-    fontWeight: '800',
-    color: '#8A072D',
-    lineHeight: 9,
-  },
-  scriptBadgeMid: {
-    fontSize: 7,
-    fontStyle: 'italic',
-    fontWeight: '700',
-    color: '#8A072D',
-    lineHeight: 8,
-  },
-  scriptBadgeSub: {
-    fontSize: 7,
-    fontStyle: 'italic',
-    fontWeight: '700',
-    color: '#8A072D',
-    lineHeight: 8,
-  },
-  scriptBadgeBot: {
-    fontSize: 8,
-    fontStyle: 'italic',
-    fontWeight: '800',
-    color: '#8A072D',
-    lineHeight: 9,
-  },
-
-  scrollContent: {
-    padding: 12,
-    gap: 14,
-  },
-
-  // Top 4 Category Tabs
-  categoryTabsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  categoryTabCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EFE2DC',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    alignItems: 'center',
+  cardCheckBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#D81B60',
     justifyContent: 'center',
-    gap: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
-  categoryTabCardActive: {
-    backgroundColor: '#FFF8F6',
-    borderWidth: 1.5,
-    borderColor: '#8A072D',
+  tagTextCol: {
+    alignItems: 'center',
   },
-  categoryTabLabel: {
-    fontSize: 9.5,
+  decorativeLine1: {
+    fontSize: 10,
+    color: '#C2185B',
+    fontStyle: 'italic',
     fontWeight: '700',
-    color: '#68595D',
-    textAlign: 'center',
     lineHeight: 12,
   },
-  categoryTabLabelActive: {
-    color: '#8A072D',
-    fontWeight: '800',
-  },
-  upiIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  upiIconText: {
-    fontSize: 13,
-    fontWeight: '900',
+  decorativeLine2: {
+    fontSize: 10,
+    color: '#C2185B',
     fontStyle: 'italic',
-    color: '#68595D',
+    fontWeight: '700',
+    lineHeight: 12,
   },
-  upiIconDots: {
-    gap: 1,
+  decorativeLine3: {
+    fontSize: 9,
+    color: '#C2185B',
+    fontStyle: 'italic',
+    fontWeight: '700',
+    lineHeight: 11,
   },
-  upiGreenDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#16A34A',
-  },
-  upiOrangeDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#EA580C',
-  },
-
-  // Form Section
-  formSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F0D4CB',
-    padding: 14,
-    gap: 10,
-    elevation: 2,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-  },
-  formHeaderRow: {
+  tabBarContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
   },
-  formTitle: {
+  tabItem: {
+    paddingVertical: 10,
+    marginRight: 18,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabItemActive: {
+    borderBottomColor: '#D81B60',
+  },
+  tabItemText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  tabItemTextActive: {
+    color: '#D81B60',
+    fontWeight: '700',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 36,
+  },
+  weAcceptCard: {
+    backgroundColor: '#FDF2F4',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  weAcceptTextCol: {
+    marginBottom: 10,
+  },
+  weAcceptTitle: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#1A040A',
+    fontWeight: '700',
+    color: '#1C1B1F',
+  },
+  weAcceptSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   cardLogosRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  visaLogo: {
+  logoPill: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 28,
+  },
+  visaPillText: {
     fontSize: 13,
     fontWeight: '900',
-    fontStyle: 'italic',
     color: '#1A1F71',
-    letterSpacing: 0.5,
+    fontStyle: 'italic',
   },
-  mcMini: {
+  mcCirclesWrap: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  mcRed: {
+  mcCircleMini: {
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#EB001B',
-    marginRight: -5,
   },
-  mcYellow: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#F79E1B',
-    opacity: 0.9,
-  },
-  rupayLogo: {
+  rupayText: {
     fontSize: 11,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    color: '#097938',
-  },
-  amexBox: {
-    backgroundColor: '#006FCF',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
+    fontWeight: '800',
+    color: '#0059B2',
   },
   amexText: {
+    fontSize: 6,
+    fontWeight: '800',
     color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '900',
+    textAlign: 'center',
+    lineHeight: 7,
   },
-
-  fieldLabel: {
-    fontSize: 10.5,
+  inputGroup: {
+    marginBottom: 14,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1C1B1F',
+    marginBottom: 6,
+  },
+  inputFieldBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  inputLeftIcon: {
+    marginRight: 10,
+  },
+  textInputMain: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1C1B1F',
+    fontWeight: '500',
+  },
+  placeholderSample: {
+    fontSize: 12,
+    color: '#CBD5E1',
+  },
+  rowTwoCols: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    padding: 6,
+  },
+  defaultCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  radioCheckCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  radioCheckCircleActive: {
+    backgroundColor: '#D81B60',
+    borderColor: '#D81B60',
+  },
+  defaultTextCol: {
+    flex: 1,
+  },
+  defaultMainText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1C1B1F',
+  },
+  defaultSubText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  saveCardButton: {
+    backgroundColor: '#D81B60',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#D81B60',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop: 6,
+  },
+  saveCardButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
-    color: '#1A040A',
   },
-  inputWrapper: {
+  encryptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    marginBottom: 20,
+    gap: 6,
+  },
+  encryptionText: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  safeBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7F8',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#FCE7EB',
+    padding: 14,
+  },
+  safeShieldGraphicBox: {
+    position: 'relative',
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  lockInsideShield: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#9F1239',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  safeTextCol: {
+    flex: 1,
+  },
+  safeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#D81B60',
+    marginBottom: 3,
+  },
+  safeSubtitle: {
+    fontSize: 11,
+    color: '#475569',
+    lineHeight: 15,
+  },
+  subSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1C1B1F',
+    marginBottom: 12,
+  },
+  upiAppsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  upiAppTile: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upiAppTileActive: {
+    borderColor: '#D81B60',
+    backgroundColor: '#FFF1F4',
+  },
+  upiAppText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+    marginTop: 4,
+  },
+  upiAppTextActive: {
+    color: '#D81B60',
+  },
+  handlesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  handleChip: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+  },
+  handleChipText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  walletsList: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  walletItemCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E8D2CB',
+    borderColor: '#E2E8F0',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
+    padding: 12,
   },
-  inputIcon: {
-    marginRight: 8,
+  walletItemCardActive: {
+    borderColor: '#D81B60',
+    backgroundColor: '#FFF7F8',
   },
-  textInputField: {
+  walletItemText: {
     flex: 1,
-    fontSize: 12,
-    color: '#1A040A',
+    marginLeft: 12,
+    fontSize: 14,
     fontWeight: '600',
+    color: '#1C1B1F',
   },
-  twoFieldsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  fieldHalf: {
-    flex: 1,
-    gap: 6,
-  },
-
-  // Checkbox
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 4,
-  },
-  checkboxSquare: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#C5B4B8',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxSquareActive: {
-    backgroundColor: '#8A072D',
-    borderColor: '#8A072D',
-  },
-  checkboxLabel: {
-    fontSize: 10.5,
-    color: '#554246',
-    fontWeight: '600',
-  },
-
-  // Submit Button
-  submitBtn: {
-    flexDirection: 'row',
-    backgroundColor: '#8A072D',
-    borderRadius: Spacing.borderRadius.round,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 6,
-    elevation: 3,
-    shadowColor: '#8A072D',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-
-  // Banks Grid
   banksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginVertical: 6,
   },
-  bankChip: {
+  bankTile: {
     width: '48%',
-    backgroundColor: '#FDF1EC',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#F7D7CA',
-  },
-  bankChipActive: {
-    backgroundColor: '#8A072D',
-    borderColor: '#8A072D',
-  },
-  bankChipText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#1A040A',
-    textAlign: 'center',
-  },
-  bankChipTextActive: {
-    color: '#FFFFFF',
-  },
-
-  // Security Notice Card
-  securityNoticeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF7F5',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F5DDD3',
-    padding: 12,
-    gap: 10,
-  },
-  shieldRedCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FDECE6',
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  securityNoticeCol: {
-    flex: 1,
+  bankTileActive: {
+    borderColor: '#D81B60',
+    backgroundColor: '#FFF1F4',
   },
-  securityNoticeTitle: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#8A072D',
-  },
-  securityNoticeSubtitle: {
-    fontSize: 9.5,
-    color: '#736064',
-    marginTop: 1,
-  },
-
-  // 4 Badges Row
-  badgesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: 2,
-  },
-  badgeCol: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  badgeText: {
-    fontSize: 8.5,
+  bankTileText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#736064',
+    color: '#475569',
+    marginTop: 6,
     textAlign: 'center',
-    lineHeight: 11,
+  },
+  bankTileTextActive: {
+    color: '#D81B60',
   },
 });

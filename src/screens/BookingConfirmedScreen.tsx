@@ -260,7 +260,10 @@ export const BookingConfirmedScreen: React.FC<BookingConfirmedProps> = ({
           <TouchableOpacity
             style={styles.actionGridBtn}
             activeOpacity={0.8}
-            onPress={() => navigation?.navigate('DownloadInvoice')}
+            onPress={() => navigation?.navigate('InvoicePayment', {
+              bookingId: bookingId,
+              vendorName: vendorName,
+            })}
           >
             <View style={styles.actionIconWrapper}>
               <Ionicons name="document-text-outline" size={18} color="#DC2626" />

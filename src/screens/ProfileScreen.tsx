@@ -17,17 +17,21 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { useAuth } from '../context/AuthContext';
 
 export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReferModal, setShowReferModal] = useState(false);
 
   // User details state
-  const [userName, setUserName] = useState('Amit Sharma');
-  const [userEmail, setUserEmail] = useState('amit.sharma@gmail.com');
-  const [userPhone, setUserPhone] = useState('+91 91234 56789');
+  const [userName, setUserName] = useState(user.name || 'Aakash Mishra');
+  const [userEmail, setUserEmail] = useState('aakashmishra@email.com');
+  const [userPhone, setUserPhone] = useState(
+    user.mobileNumber ? `+91 ${user.mobileNumber}` : '+91 97133 32997'
+  );
   const [userCity, setUserCity] = useState('Indore, Madhya Pradesh');
 
   const menuItems = [
@@ -48,6 +52,13 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
       title: 'My Favourites',
       subtitle: 'Your saved vendors and services',
       onPress: () => navigation?.navigate('SavedItems'),
+    },
+    {
+      id: 'addresses',
+      icon: 'location-outline',
+      title: 'My Addresses',
+      subtitle: 'Manage your saved addresses for events',
+      onPress: () => navigation?.navigate('MyAddresses'),
     },
     {
       id: 'payments',
@@ -98,20 +109,24 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
   ];
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to log out of your Band Baaja Baarat account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes, Logout',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Logged Out', 'You have been logged out successfully.');
+    if (navigation?.navigate) {
+      navigation.navigate('Logout');
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to log out of your Band Baaja Baarat account?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Yes, Logout',
+            style: 'destructive',
+            onPress: () => {
+              Alert.alert('Logged Out', 'You have been logged out successfully.');
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   return (
@@ -159,7 +174,13 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
             <TouchableOpacity
               style={styles.cameraIconBadge}
               activeOpacity={0.8}
-              onPress={() => setShowEditModal(true)}
+              onPress={() => {
+                if (navigation?.navigate) {
+                  navigation.navigate('EditProfile');
+                } else {
+                  setShowEditModal(true);
+                }
+              }}
             >
               <Ionicons name="camera" size={11} color="#FFFFFF" />
             </TouchableOpacity>
@@ -171,17 +192,31 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
             <Text style={styles.userEmailText}>{userEmail}</Text>
             <Text style={styles.userPhoneText}>{userPhone}</Text>
 
-            <View style={styles.userLocationRow}>
+            <TouchableOpacity
+              style={styles.userLocationRow}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (navigation?.navigate) {
+                  navigation.navigate('MyAddresses');
+                }
+              }}
+            >
               <Ionicons name="location-sharp" size={11} color="#8A072D" />
               <Text style={styles.userLocationText}>{userCity}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Edit Profile Button */}
           <TouchableOpacity
             style={styles.editProfileBtn}
             activeOpacity={0.8}
-            onPress={() => setShowEditModal(true)}
+            onPress={() => {
+              if (navigation?.navigate) {
+                navigation.navigate('EditProfile');
+              } else {
+                setShowEditModal(true);
+              }
+            }}
           >
             <Ionicons name="pencil" size={11} color="#8A072D" />
             <Text style={styles.editProfileBtnText}>Edit Profile</Text>

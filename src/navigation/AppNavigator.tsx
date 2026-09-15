@@ -21,15 +21,25 @@ import { BookingDetailsScreen } from '../screens/BookingDetailsScreen';
 import { RescheduleScreen } from '../screens/RescheduleScreen';
 import { CancelBookingScreen } from '../screens/CancelBookingScreen';
 import { DownloadInvoiceScreen } from '../screens/DownloadInvoiceScreen';
+import { InvoicePaymentScreen } from '../screens/InvoicePaymentScreen';
+import { MakePaymentScreen } from '../screens/MakePaymentScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { RateReviewScreen } from '../screens/RateReviewScreen';
 import { ChatScreen } from '../screens/ChatScreen';
+import { ScheduleMeetingScreen } from '../screens/ScheduleMeetingScreen';
+import { MeetingScheduledScreen } from '../screens/MeetingScheduledScreen';
+import { NegotiatePriceScreen } from '../screens/NegotiatePriceScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { MyAddressesScreen } from '../screens/MyAddressesScreen';
+import { AddNewAddressScreen } from '../screens/AddNewAddressScreen';
 import { SavedPaymentMethodsScreen } from '../screens/SavedPaymentMethodsScreen';
 import { AddPaymentMethodScreen } from '../screens/AddPaymentMethodScreen';
 import { HelpSupportScreen } from '../screens/HelpSupportScreen';
 import { ReferEarnScreen } from '../screens/ReferEarnScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { TermsConditionsScreen } from '../screens/TermsConditionsScreen';
+import { LogoutScreen } from '../screens/LogoutScreen';
 import { SavedItemsScreen } from '../screens/SavedItemsScreen';
 import { CompareServicesScreen } from '../screens/CompareServicesScreen';
 import { VenueBookingDetailsScreen } from '../screens/VenueBookingDetailsScreen';
@@ -48,9 +58,13 @@ const HomeNavigator: React.FC = () => {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="SavedItems" component={SavedItemsScreen} />
       <Stack.Screen name="CompareServices" component={CompareServicesScreen} />
+      <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
+      <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
       <Stack.Screen name="PaymentBooking" component={PaymentBookingScreen} />
       <Stack.Screen name="BookingConfirmed" component={BookingConfirmedScreen} />
+      <Stack.Screen name="InvoicePayment" component={InvoicePaymentScreen} />
+      <Stack.Screen name="MakePayment" component={MakePaymentScreen} />
       <Stack.Screen name="BookingsList" component={BookingsScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
       <Stack.Screen name="BookingTracking" component={BookingTrackingScreen} />
@@ -65,9 +79,12 @@ const ServicesNavigator: React.FC = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AllServices" component={ServicesScreen} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+      <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
+      <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
       <Stack.Screen name="PaymentBooking" component={PaymentBookingScreen} />
-      <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
+      <Stack.Screen name="InvoicePayment" component={InvoicePaymentScreen} />
+      <Stack.Screen name="MakePayment" component={MakePaymentScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="BookingConfirmed" component={BookingConfirmedScreen} />
       <Stack.Screen name="CompareServices" component={CompareServicesScreen} />
@@ -86,9 +103,13 @@ const BookingsNavigator: React.FC = () => {
       <Stack.Screen name="BookingsList" component={BookingsScreen} />
       <Stack.Screen name="BookingTracking" component={BookingTrackingScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+      <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
+      <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
       <Stack.Screen name="PaymentBooking" component={PaymentBookingScreen} />
       <Stack.Screen name="BookingConfirmed" component={BookingConfirmedScreen} />
+      <Stack.Screen name="InvoicePayment" component={InvoicePaymentScreen} />
+      <Stack.Screen name="MakePayment" component={MakePaymentScreen} />
       <Stack.Screen name="Reschedule" component={RescheduleScreen} />
       <Stack.Screen name="CancelBooking" component={CancelBookingScreen} />
       <Stack.Screen name="DownloadInvoice" component={DownloadInvoiceScreen} />
@@ -105,6 +126,12 @@ const ChatNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ChatMain" component={ChatScreen} />
+      <Stack.Screen name="ScheduleMeeting" component={ScheduleMeetingScreen} />
+      <Stack.Screen name="MeetingScheduled" component={MeetingScheduledScreen} />
+      <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
+      <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
+      <Stack.Screen name="InvoicePayment" component={InvoicePaymentScreen} />
+      <Stack.Screen name="MakePayment" component={MakePaymentScreen} />
       <Stack.Screen name="RateReview" component={RateReviewScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
@@ -133,10 +160,13 @@ const NotificationsNavigator: React.FC = () => {
   );
 };
 
-const ProfileNavigator: React.FC = () => {
+const ProfileNavigator: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="MyAddresses" component={MyAddressesScreen} />
+      <Stack.Screen name="AddNewAddress" component={AddNewAddressScreen} />
       <Stack.Screen name="SavedItems" component={SavedItemsScreen} />
       <Stack.Screen name="CompareServices" component={CompareServicesScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
@@ -152,6 +182,10 @@ const ProfileNavigator: React.FC = () => {
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ReferEarn" component={ReferEarnScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
+      <Stack.Screen name="Logout">
+        {(props) => <LogoutScreen {...props} onConfirmLogout={onLogout} />}
+      </Stack.Screen>
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
@@ -253,7 +287,9 @@ export const AppNavigator: React.FC = () => {
         <Tab.Screen name="Bookings" component={BookingsNavigator} options={{ title: 'My Bookings' }} />
         <Tab.Screen name="Notifications" component={NotificationsNavigator} options={{ title: 'Notifications' }} />
         <Tab.Screen name="Chat" component={ChatNavigator} options={{ title: 'Chat' }} />
-        <Tab.Screen name="Profile" component={ProfileNavigator} options={{ title: 'Profile' }} />
+        <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
+          {(props) => <ProfileNavigator {...props} onLogout={() => setCurrentStep('login')} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );
