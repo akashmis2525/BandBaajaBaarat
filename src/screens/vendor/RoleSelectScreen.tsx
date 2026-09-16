@@ -10,8 +10,9 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Assets } from '../../constants/assets';
 
 interface RoleSelectScreenProps {
   onSelectCustomer: () => void;
@@ -26,42 +27,35 @@ export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#8A072D" />
 
-      {/* Header */}
+      {/* Top Royal Brand Splash Header */}
       <View
         style={[
-          styles.headerRow,
+          styles.heroHeader,
           {
             paddingTop:
               Platform.OS === 'android'
-                ? (StatusBar.currentHeight || 24) + 10
+                ? (StatusBar.currentHeight || 24) + 12
                 : insets.top > 0
-                ? insets.top + 6
-                : 16,
+                ? insets.top + 8
+                : 20,
           },
         ]}
       >
-        <View style={styles.titleColumn}>
-          <Text style={styles.brandTitle}>
-            Band Baaja <Text style={styles.brandTitleHighlight}>Baarat</Text>
-          </Text>
-          <Text style={styles.brandSubtitle}>
-            India's Premier Wedding Planning & Vendor Marketplace
-          </Text>
+        <View style={styles.topBadgeRow}>
+          <View style={styles.goldPill}>
+            <Ionicons name="sparkles" size={12} color="#F59E0B" style={{ marginRight: 4 }} />
+            <Text style={styles.goldPillText}>INDIA'S #1 WEDDING APP</Text>
+          </View>
         </View>
 
-        {/* Top Right Decorative Tag */}
-        <View style={styles.decorativeTag}>
-          <View style={styles.tagGraphicBox}>
-            <Ionicons name="sparkles" size={16} color="#D81B60" />
-          </View>
-          <View style={styles.tagTextCol}>
-            <Text style={styles.decorativeLine1}>Choose</Text>
-            <Text style={styles.decorativeLine2}>Account</Text>
-            <Text style={styles.decorativeLine3}>Your Role ♡</Text>
-          </View>
-        </View>
+        <Text style={styles.brandTitle}>
+          Band Baaja <Text style={styles.brandHighlight}>Baarat</Text>
+        </Text>
+        <Text style={styles.brandTagline}>
+          Shubh Vivah Se Shandar Reception Tak ♡
+        </Text>
       </View>
 
       <ScrollView
@@ -69,124 +63,79 @@ export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcomeBanner}>
-          <Text style={styles.welcomeHeading}>How would you like to use the app?</Text>
-          <Text style={styles.welcomeSubtext}>
-            Select your account type to get a personalized wedding experience
-          </Text>
-        </View>
+        <Text style={styles.sectionHeading}>Choose Your Experience</Text>
 
         {/* Option 1: Customer / Bride & Groom */}
         <TouchableOpacity
-          style={styles.roleCard}
+          style={styles.choiceCardCustomer}
           activeOpacity={0.88}
           onPress={onSelectCustomer}
         >
-          <View style={styles.cardRibbonCustomer}>
-            <Text style={styles.ribbonCustomerText}>FOR BRIDE, GROOM & FAMILIES</Text>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.iconCircleCustomer}>
+              <Text style={{ fontSize: 26 }}>💍</Text>
+            </View>
+            <View style={styles.cardBadgeCustomer}>
+              <Text style={styles.cardBadgeCustomerText}>FOR FAMILIES</Text>
+            </View>
           </View>
 
-          <View style={styles.roleCardContent}>
-            <View style={styles.roleIconCircleCustomer}>
-              <Text style={{ fontSize: 32 }}>💍</Text>
-            </View>
+          <Text style={styles.cardTitle}>I'm Planning a Wedding</Text>
+          <Text style={styles.cardSub}>
+            Book Mandap, Catering, Dhol, Makeup & Venues in Indore & MP
+          </Text>
 
-            <View style={styles.roleInfoCol}>
-              <Text style={styles.roleTitle}>Plan My Dream Wedding</Text>
-              <Text style={styles.roleDesc}>
-                Explore 500+ verified wedding vendors in Indore & MP. Book Mandap decor, catering, dhol, photography & get instant discounts.
-              </Text>
-
-              <View style={styles.featuresList}>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#D81B60" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Compare prices & negotiate live quotes</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#D81B60" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Secure token advance & escrow payments</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#D81B60" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Free Wedding Planner budget toolkit</Text>
-                </View>
-              </View>
-
-              <View style={styles.cardActionRow}>
-                <View style={styles.continueBtnCustomer}>
-                  <Text style={styles.continueBtnCustomerText}>Continue as Customer</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
-                </View>
-              </View>
-            </View>
+          <View style={styles.actionBtnCustomer}>
+            <Text style={styles.actionBtnText}>Continue as Customer</Text>
+            <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
           </View>
         </TouchableOpacity>
 
         {/* Option 2: Vendor Partner / Business */}
         <TouchableOpacity
-          style={[styles.roleCard, styles.roleCardVendor]}
+          style={styles.choiceCardVendor}
           activeOpacity={0.88}
           onPress={onSelectVendor}
         >
-          <View style={styles.cardRibbonVendor}>
-            <Text style={styles.ribbonVendorText}>★ FOR VENDORS & BUSINESSES</Text>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.iconCircleVendor}>
+              <Text style={{ fontSize: 26 }}>🏢</Text>
+            </View>
+            <View style={styles.cardBadgeVendor}>
+              <Text style={styles.cardBadgeVendorText}>FOR VENDORS</Text>
+            </View>
           </View>
 
-          <View style={styles.roleCardContent}>
-            <View style={styles.roleIconCircleVendor}>
-              <Text style={{ fontSize: 32 }}>🏢</Text>
-            </View>
+          <Text style={styles.cardTitle}>I'm a Wedding Vendor</Text>
+          <Text style={styles.cardSub}>
+            Get verified leads, send quotations & direct bank payouts
+          </Text>
 
-            <View style={styles.roleInfoCol}>
-              <Text style={styles.roleTitle}>Grow My Wedding Business</Text>
-              <Text style={styles.roleDesc}>
-                Receive genuine wedding inquiries, send itemized quotations, manage calendar bookings & get guaranteed direct bank payouts.
-              </Text>
-
-              <View style={styles.featuresList}>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#8A072D" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Verified Leads stream with customer budget</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#8A072D" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Itemized Quotation & Contract Generator</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <Ionicons name="checkmark-circle" size={14} color="#8A072D" style={{ marginRight: 6 }} />
-                  <Text style={styles.featureText}>Instant Advance Payouts to your Bank Account</Text>
-                </View>
-              </View>
-
-              <View style={styles.cardActionRow}>
-                <View style={styles.continueBtnVendor}>
-                  <Text style={styles.continueBtnVendorText}>Enter Partner Portal</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
-                </View>
-              </View>
-            </View>
+          <View style={styles.actionBtnVendor}>
+            <Text style={styles.actionBtnText}>Enter Partner Portal</Text>
+            <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
           </View>
         </TouchableOpacity>
 
-        {/* Trust Badges Footer */}
-        <View style={styles.trustBadgesRow}>
+        {/* Trust Badges Strip */}
+        <View style={styles.trustStrip}>
           <View style={styles.trustItem}>
-            <Ionicons name="shield-checkmark" size={16} color="#D81B60" />
-            <Text style={styles.trustText}>100% Verified Vendors</Text>
+            <Ionicons name="shield-checkmark" size={16} color="#8A072D" />
+            <Text style={styles.trustText}>100% Verified</Text>
           </View>
-          <View style={styles.trustDivider} />
+          <View style={styles.trustDot} />
           <View style={styles.trustItem}>
-            <Ionicons name="lock-closed" size={16} color="#D81B60" />
-            <Text style={styles.trustText}>Safe & Secure Escrow</Text>
+            <Ionicons name="lock-closed" size={16} color="#8A072D" />
+            <Text style={styles.trustText}>Secure Escrow</Text>
           </View>
-          <View style={styles.trustDivider} />
+          <View style={styles.trustDot} />
           <View style={styles.trustItem}>
             <Ionicons name="star" size={16} color="#F59E0B" />
             <Text style={styles.trustText}>4.9/5 Rating</Text>
           </View>
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -195,194 +144,163 @@ export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8FAFC',
-  },
-  titleColumn: {
-    flex: 1,
-  },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#8A072D',
-    letterSpacing: -0.4,
-  },
-  brandTitleHighlight: {
-    color: '#D81B60',
-  },
-  brandSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  decorativeTag: {
-    backgroundColor: '#FFF1F2',
-    borderRadius: 22,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 0.8,
-    borderColor: '#FFE4E6',
-  },
-  tagGraphicBox: {
-    marginRight: 4,
-  },
-  tagTextCol: {
-    alignItems: 'flex-start',
-  },
-  decorativeLine1: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#D81B60',
-    lineHeight: 10,
-  },
-  decorativeLine2: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#D81B60',
-    lineHeight: 10,
-  },
-  decorativeLine3: {
-    fontSize: 8.5,
-    fontWeight: '600',
-    color: '#D81B60',
-    lineHeight: 10,
+    backgroundColor: '#8A072D',
   },
 
+  // Splash Hero Header
+  heroHeader: {
+    backgroundColor: '#8A072D',
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    alignItems: 'center',
+  },
+  topBadgeRow: {
+    marginBottom: 8,
+  },
+  goldPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+  },
+  goldPillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#FED7AA',
+    letterSpacing: 0.8,
+  },
+  brandTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  brandHighlight: {
+    color: '#FBBF24',
+  },
+  brandTagline: {
+    fontSize: 12,
+    color: '#FFE4E8',
+    fontWeight: '500',
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+
+  // Content Area
   scrollContainer: {
     flex: 1,
     backgroundColor: '#FAF9FB',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 18,
+    paddingTop: 20,
     paddingBottom: 24,
   },
-  welcomeBanner: {
-    marginBottom: 16,
-  },
-  welcomeHeading: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  welcomeSubtext: {
-    fontSize: 12.5,
+  sectionHeading: {
+    fontSize: 14,
+    fontWeight: '700',
     color: '#64748B',
-    lineHeight: 17,
+    textAlign: 'center',
+    marginBottom: 16,
+    letterSpacing: 0.3,
   },
 
-  // Role Cards
-  roleCard: {
+  // Choice Cards
+  choiceCardCustomer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#FFE4E8',
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#D81B60',
+    borderColor: '#FECDD3',
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#8A072D',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
-  roleCardVendor: {
+  choiceCardVendor: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#8A072D',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  iconCircleCustomer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+  },
+  iconCircleVendor: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  cardRibbonCustomer: {
+  cardBadgeCustomer: {
     backgroundColor: '#FFF1F2',
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4E8',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  ribbonCustomerText: {
-    fontSize: 10,
+  cardBadgeCustomerText: {
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#D81B60',
     letterSpacing: 0.5,
   },
-  cardRibbonVendor: {
+  cardBadgeVendor: {
     backgroundColor: '#FEF3C7',
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  ribbonVendorText: {
-    fontSize: 10,
+  cardBadgeVendorText: {
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#B45309',
     letterSpacing: 0.5,
   },
-  roleCardContent: {
-    padding: 16,
-  },
-  roleIconCircleCustomer: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#FFF1F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#FECDD3',
-  },
-  roleIconCircleVendor: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#FEF3C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  roleInfoCol: {
-    flex: 1,
-  },
-  roleTitle: {
-    fontSize: 16.5,
+  cardTitle: {
+    fontSize: 17,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 4,
+    marginBottom: 3,
   },
-  roleDesc: {
+  cardSub: {
     fontSize: 12,
     color: '#64748B',
-    lineHeight: 17,
-    marginBottom: 12,
+    lineHeight: 16,
+    marginBottom: 14,
   },
-  featuresList: {
-    gap: 6,
-    marginBottom: 16,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featureText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  cardActionRow: {
-    marginTop: 4,
-  },
-  continueBtnCustomer: {
+  actionBtnCustomer: {
     backgroundColor: '#E5093A',
     borderRadius: 12,
     flexDirection: 'row',
@@ -390,12 +308,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  continueBtnCustomerText: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  continueBtnVendor: {
+  actionBtnVendor: {
     backgroundColor: '#8A072D',
     borderRadius: 12,
     flexDirection: 'row',
@@ -403,38 +316,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  continueBtnVendorText: {
+  actionBtnText: {
     fontSize: 13.5,
     fontWeight: '800',
     color: '#FFFFFF',
   },
 
-  // Trust Badges
-  trustBadgesRow: {
+  // Trust Strip
+  trustStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    marginTop: 6,
+    gap: 10,
   },
   trustItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   trustText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#475569',
-    marginLeft: 4,
   },
-  trustDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: '#E2E8F0',
+  trustDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#CBD5E1',
   },
 });
