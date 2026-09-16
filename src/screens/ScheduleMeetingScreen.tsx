@@ -16,6 +16,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface ScheduleMeetingScreenProps {
   navigation?: any;
@@ -80,7 +81,20 @@ export const ScheduleMeetingScreen: React.FC<ScheduleMeetingScreenProps> = ({
       return;
     }
 
-    // Navigate to Meeting Scheduled screen with meeting details
+    api
+      .createMeeting({
+        vendorProfileId: route?.params?.vendorProfileId,
+        vendorId: route?.params?.vendorId,
+        meetingDate: selectedDate,
+        meetingTime: selectedTime,
+        meetingType,
+        meetingLocation: location,
+        purpose: meetingPurpose,
+        notes: meetingPurpose,
+        eventType: route?.params?.eventType || 'Wedding discussion',
+      })
+      .catch(() => undefined);
+
     if (navigation?.navigate) {
       navigation.navigate('MeetingScheduled', {
         meetingDetails: {

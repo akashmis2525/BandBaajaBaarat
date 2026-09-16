@@ -17,23 +17,36 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, ReferralRow } from '../services/api';
 
 export const ReferEarnScreen: React.FC<{ navigation?: any; onBack?: () => void }> = ({
   navigation,
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const referralCode = 'BAND2026';
+  const [referralCode, setReferralCode] = useState('BAND2026');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [referralHistory, setReferralHistory] = useState<
+    { name: string; date: string; service: string; reward: string; status: string }[]
+  >([]);
 
-  const referralHistory = [
-    { name: 'Rohit Verma', date: '08 Nov 2026', service: 'Royal Beats Dhol', reward: '₹100', status: 'Completed' },
-    { name: 'Pooja Jain', date: '02 Nov 2026', service: 'Click Studio Photography', reward: '₹100', status: 'Completed' },
-    { name: 'Vikas Sharma', date: '28 Oct 2026', service: 'Sharma Dhol Group', reward: '₹100', status: 'Completed' },
-    { name: 'Ananya Mehta', date: '21 Oct 2026', service: 'Mehndi Artist', reward: '₹100', status: 'Completed' },
-    { name: 'Kunal Patel', date: '15 Oct 2026', service: 'DJ Services', reward: '₹100', status: 'Completed' },
-    { name: 'Siddharth Rao', date: '12 Nov 2026', service: 'Pending First Booking', reward: '₹0', status: 'Pending' },
-  ];
+  React.useEffect(() => {
+    api
+      .getReferral()
+      .then((res) => {
+        setReferralCode(res.referralCode);
+        setReferralHistory(
+          res.history.map((r: ReferralRow) => ({
+            name: r.name,
+            date: r.date,
+            service: r.service,
+            reward: r.reward,
+            status: r.status,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   const handleBack = () => {
     if (onBack) {

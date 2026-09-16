@@ -18,7 +18,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, authError } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -35,11 +35,11 @@ export const CompleteProfileScreen: React.FC<CompleteProfileScreenProps> = ({
   onSkip,
 }) => {
   const insets = useSafeAreaInsets();
-  const { user, updateProfile } = useAuth();
+  const { user, completeProfile } = useAuth();
 
   const [fullName, setFullName] = useState(user.name || '');
   const [emailAddress, setEmailAddress] = useState('');
-  const [whatsappNumber, setWhatsappNumber] = useState(user.mobileNumber || '9876543210');
+  const [whatsappNumber, setWhatsappNumber] = useState(user.mobileNumber || '');
   const [referralCode, setReferralCode] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(true);
 
@@ -91,14 +91,20 @@ export const CompleteProfileScreen: React.FC<CompleteProfileScreenProps> = ({
     setErrors({});
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      updateProfile({
-        name: fullName.trim(),
-        mobileNumber: user.mobileNumber || '9876543210',
+    completeProfile({
+      name: fullName.trim(),
+      email: emailAddress.trim(),
+      whatsappNumber: cleanWhatsapp,
+      referralCode: referralCode.trim() || undefined,
+    })
+      .then(() => {
+        setIsLoading(false);
+        onSuccess();
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        setErrors({ fullName: authError(err) });
       });
-      onSuccess();
-    }, 800);
   };
 
   return (

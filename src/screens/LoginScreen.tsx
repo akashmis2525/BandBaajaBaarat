@@ -19,11 +19,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth, authError } from '../context/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface LoginScreenProps {
-  onSuccess: (phone: string) => void;
+  onSuccess: (phone: string, extras?: { isProfileComplete?: boolean }) => void;
   onBack?: () => void;
   onSkip?: () => void;
 }
@@ -34,6 +35,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onSkip,
 }) => {
   const insets = useSafeAreaInsets();
+  const { sendOtp, loginWithOtp } = useAuth();
   const [mobileNumber, setMobileNumber] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +70,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   }, [showOtpView, timer]);
 
   // Mobile Validation Logic
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const cleaned = mobileNumber.replace(/\D/g, '');
     if (cleaned.length !== 10) {
       setErrorMessage('Please enter a valid 10-digit mobile number');
@@ -82,14 +84,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setErrorMessage(null);
     setIsLoading(true);
 
-    // Simulate OTP dispatch
-    setTimeout(() => {
+    try {
+      const otp = await sendOtp(cleaned, 'customer');
       setIsLoading(false);
       setShowOtpView(true);
       setTimer(30);
       setCanResend(false);
-      setOtpValues(['1', '2', '3', '4']); // Pre-fill mock OTP for smooth testing
-    }, 800);
+      if (otp) setOtpValues(otp.split(''));
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage(authError(err));
+    }
   };
 
   // OTP Change Handler
@@ -112,17 +117,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onSuccess(mobileNumber);
-    }, 600);
+    loginWithOtp(mobileNumber.replace(/\D/g, '').slice(-10), enteredOtp, 'customer')
+      .then((result) => {
+        setIsLoading(false);
+        onSuccess(mobileNumber.replace(/\D/g, '').slice(-10), {
+          isProfileComplete: result.isProfileComplete,
+        });
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        setErrorMessage(authError(err));
+      });
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     setTimer(30);
     setCanResend(false);
     setOtpValues(['', '', '', '']);
     setErrorMessage(null);
+    try {
+      const otp = await sendOtp(mobileNumber.replace(/\D/g, '').slice(-10), 'customer');
+      if (otp) setOtpValues(otp.split(''));
+    } catch (err) {
+      setErrorMessage(authError(err));
+    }
   };
 
   return (

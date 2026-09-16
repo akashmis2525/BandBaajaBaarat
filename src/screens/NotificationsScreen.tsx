@@ -12,16 +12,18 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 export const NotificationsScreen: React.FC<{ navigation?: any; onBack?: () => void }> = ({
   navigation,
   onBack,
 }) => {
+  const { user, updateProfile } = useAuth();
   const insets = useSafeAreaInsets();
 
   // Push notification master switch
-  const [pushMaster, setPushMaster] = useState(true);
+  const [pushMaster, setPushMaster] = useState(user.notificationPrefs?.pushMaster ?? true);
 
   // Push preferences switches
   const [bookingUpdates, setBookingUpdates] = useState(true);
@@ -45,6 +47,10 @@ export const NotificationsScreen: React.FC<{ navigation?: any; onBack?: () => vo
     }
   };
 
+  const persistPrefs = (next: Record<string, boolean>) => {
+    api.updateNotificationPrefs(next).catch(() => undefined);
+  };
+
   const handleMasterToggle = (val: boolean) => {
     setPushMaster(val);
     if (!val) {
@@ -53,10 +59,24 @@ export const NotificationsScreen: React.FC<{ navigation?: any; onBack?: () => vo
       setNewServices(false);
       setReminders(false);
       setMarketingUpdates(false);
+      persistPrefs({
+        pushMaster: false,
+        bookingUpdates: false,
+        offersDeals: false,
+        newServices: false,
+        reminders: false,
+        marketingUpdates: false,
+      });
     } else {
       setBookingUpdates(true);
       setOffersDeals(true);
       setReminders(true);
+      persistPrefs({
+        pushMaster: true,
+        bookingUpdates: true,
+        offersDeals: true,
+        reminders: true,
+      });
     }
   };
 

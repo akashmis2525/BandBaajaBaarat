@@ -21,6 +21,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
 import { useLocation } from '../context/LocationContext';
+import { api, ApiVendor } from '../services/api';
+import { resolveImage } from '../utils/images';
+import { userMessage } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -77,6 +80,7 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showPostRequirementModal, setShowPostRequirementModal] = useState(false);
+  const [vendorRows, setVendorRows] = useState<VendorItem[]>([]);
 
   // Post Requirement Form State
   const [reqName, setReqName] = useState('');
@@ -99,6 +103,7 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
       ...prev,
       [id]: !prev[id],
     }));
+    api.toggleFavorite(id).catch(() => undefined);
   };
 
   const handleShare = async () => {
@@ -111,68 +116,46 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
     }
   };
 
-  const rawVendors: VendorItem[] = [
-    {
-      id: 'v1',
-      name: 'Sharma Dhol Group',
-      category: 'Dhol',
-      rating: 4.8,
-      reviewsCount: 320,
-      experienceYears: 8,
-      distanceKm: 2.4,
-      startingPrice: 8000,
-      image: Assets.serviceDhol,
-      photosCount: 5,
-      isVerified: true,
-      type: 'Professional Group',
-      isAvailable: true,
-    },
-    {
-      id: 'v2',
-      name: 'Royal Beats Dhol Party',
-      category: 'Dhol',
-      rating: 4.6,
-      reviewsCount: 210,
-      experienceYears: 5,
-      distanceKm: 3.1,
-      startingPrice: 10000,
-      image: Assets.serviceBrassBand,
-      photosCount: 8,
-      isVerified: true,
-      type: 'Professional Group',
-      isAvailable: true,
-    },
-    {
-      id: 'v3',
-      name: 'Maa Narmada Dhol Group',
-      category: 'Dhol',
-      rating: 4.9,
-      reviewsCount: 486,
-      experienceYears: 12,
-      distanceKm: 4.2,
-      startingPrice: 12000,
-      image: Assets.serviceDhol,
-      photosCount: 6,
-      isVerified: true,
-      type: 'Professional Group',
-      isAvailable: true,
-    },
-    {
-      id: 'v4',
-      name: 'Indore Dhol Artist',
-      category: 'Dhol',
-      rating: 4.5,
-      reviewsCount: 132,
-      experienceYears: 3,
-      distanceKm: 1.8,
-      startingPrice: 5000,
-      image: Assets.serviceDj,
-      photosCount: 4,
-      isVerified: true,
-      type: 'Individual Artist',
-      isAvailable: true,
-    },
-  ];
+  React.useEffect(() => {
+    api
+      .vendors({
+        category: serviceName,
+        city: currentCity,
+        sort: activeSort,
+        ...(activeFilter === 'Professional Group' || activeFilter === 'Individual Artist'
+          ? { type: activeFilter }
+          : {}),
+        ...(activeFilter === 'Verified Only' ? { onlyVerified: 'true' } : {}),
+        ...(activeFilter === 'Under ₹8,000' ? { priceMax: '8000' } : {}),
+      })
+      .then((res) => {
+        setVendorRows(
+          res.items.map((v: ApiVendor) => ({
+            id: v.id,
+            name: v.businessName || v.name,
+            category: v.category,
+            rating: v.rating,
+            reviewsCount: v.reviewsCount,
+            experienceYears: v.experienceYears,
+            distanceKm: v.distanceKm || 2.4,
+            startingPrice: v.startingPrice,
+            image: resolveImage(v.imageKey),
+            photosCount: v.photosCount,
+            isVerified: v.isVerified,
+            type: (v.type as VendorItem['type']) || 'Professional Group',
+            isAvailable: v.isAvailable,
+          })),
+        );
+        const fav: Record<string, boolean> = {};
+        res.items.forEach((v) => {
+          if (v.isFavorite) fav[v.id] = true;
+        });
+        setFavorites(fav);
+      })
+      .catch(() => undefined);
+  }, [serviceName, currentCity, activeSort, activeFilter]);
+
+  const rawVendors: VendorItem[] = vendorRows;
 
   // Apply sorting
   const vendors = [...rawVendors].sort((a, b) => {
@@ -188,19 +171,33 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
       Alert.alert('Validation Error', 'Please enter a valid 10-digit mobile number.');
       return;
     }
-    Alert.alert(
-      'Requirement Posted Successfully! 🎉',
-      `Thank you! Top ${serviceName} vendors in ${currentCity} will contact you shortly with personalized wedding packages.`,
-      [
-        {
-          text: 'Great!',
-          onPress: () => {
-            setShowPostRequirementModal(false);
-            setReqDetails('');
-          },
-        },
-      ]
-    );
+    api
+      .createLead({
+        customerName: reqName || 'Customer',
+        phone: reqPhone.replace(/\D/g, '').slice(-10),
+        eventType: serviceName,
+        eventDate: reqDate,
+        venueCity: `${currentCity}, ${currentState}`,
+        budgetRange: reqBudget,
+        notes: `${reqDholCount}. ${reqDetails}`.trim(),
+        category: serviceName,
+      })
+      .then(() => {
+        Alert.alert(
+          'Requirement Posted Successfully! 🎉',
+          `Thank you! Top ${serviceName} vendors in ${currentCity} will contact you shortly with personalized wedding packages.`,
+          [
+            {
+              text: 'Great!',
+              onPress: () => {
+                setShowPostRequirementModal(false);
+                setReqDetails('');
+              },
+            },
+          ],
+        );
+      })
+      .catch((err) => Alert.alert('Could not post requirement', userMessage(err)));
   };
 
   return (

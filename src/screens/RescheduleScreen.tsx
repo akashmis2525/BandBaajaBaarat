@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface RescheduleScreenProps {
   navigation?: any;
@@ -110,16 +111,32 @@ export const RescheduleScreen: React.FC<RescheduleScreenProps> = ({
   };
 
   const handleSubmit = () => {
-    Alert.alert(
-      'Reschedule Request Submitted! 🎉',
-      `Your request to reschedule to ${selectedDay} ${months[currentMonthIndex]} ${currentYear} (${selectedTime}) has been sent to Royal Beats Dhol Group for confirmation.\n\nYou will receive an SMS and WhatsApp notification once confirmed.`,
-      [
-        {
-          text: 'View Bookings',
-          onPress: () => navigation?.navigate('BookingsList'),
-        },
-      ]
-    );
+    const eventDate = `${selectedDay} ${months[currentMonthIndex]} ${currentYear}`;
+    const mongoId = route?.params?.booking?.id || route?.params?.bookingId;
+    const done = () =>
+      Alert.alert(
+        'Reschedule Request Submitted! 🎉',
+        `Your request to reschedule to ${selectedDay} ${months[currentMonthIndex]} ${currentYear} (${selectedTime}) has been sent to Royal Beats Dhol Group for confirmation.\n\nYou will receive an SMS and WhatsApp notification once confirmed.`,
+        [
+          {
+            text: 'View Bookings',
+            onPress: () => navigation?.navigate('BookingsList'),
+          },
+        ]
+      );
+
+    if (mongoId && /^[a-fA-F0-9]{24}$/.test(String(mongoId))) {
+      api
+        .rescheduleBooking(String(mongoId), {
+          eventDate,
+          eventTime: selectedTime,
+          reason: reasonText,
+        })
+        .then(done)
+        .catch((err) => Alert.alert('Reschedule failed', userMessage(err)));
+      return;
+    }
+    done();
   };
 
   return (

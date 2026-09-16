@@ -14,6 +14,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 interface VendorNegotiateProps {
   navigation?: any;
@@ -69,20 +70,45 @@ export const VendorNegotiateScreen: React.FC<VendorNegotiateProps> = ({
   };
 
   const handleAgreePrice = () => {
-    setVendorAgreed(true);
-    showDialog({
-      type: 'success',
-      title: 'Deal Agreed & Locked! 🤝',
-      message: `You have accepted ₹${parseInt(counterOfferAmount).toLocaleString('en-IN')} with ${customerName}. Booking contract is locked for advance payment.`,
-      confirmText: 'View Active Bookings',
-      highlightText: '🔒 ₹25,000 token advance required from couple',
-      onConfirm: () => {
-        hideDialog();
-        if (navigation?.navigate) {
-          navigation.navigate('VendorBookings');
-        }
-      },
-    });
+    const agreed = parseInt(counterOfferAmount, 10);
+    const persist = () => {
+      setVendorAgreed(true);
+      showDialog({
+        type: 'success',
+        title: 'Deal Agreed & Locked! 🤝',
+        message: `You have accepted ₹${agreed.toLocaleString('en-IN')} with ${customerName}. Booking contract is locked for advance payment.`,
+        confirmText: 'View Active Bookings',
+        highlightText: '🔒 ₹25,000 token advance required from couple',
+        onConfirm: () => {
+          hideDialog();
+          if (navigation?.navigate) {
+            navigation.navigate('VendorBookings');
+          }
+        },
+      });
+    };
+    const negotiationId = route?.params?.negotiationId;
+    const customerId = route?.params?.customerId;
+    if (negotiationId) {
+      api.agreeNegotiation(negotiationId, agreed).then(persist).catch(() => persist());
+      return;
+    }
+    if (customerId) {
+      api
+        .createNegotiation({
+          customerId,
+          originalAmount: initialQuotation,
+          counterOfferAmount: agreed,
+        })
+        .then((res) => {
+          const id = res.negotiation?._id;
+          if (id) return api.agreeNegotiation(id, agreed);
+        })
+        .then(persist)
+        .catch(() => persist());
+      return;
+    }
+    persist();
   };
 
   const handleBack = () => {

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, ApiTicket, userMessage } from '../services/api';
 
 interface SupportTicketScreenProps {
   navigation?: any;
@@ -48,30 +49,28 @@ export const SupportTicketScreen: React.FC<SupportTicketScreenProps> = ({
   const [isUrgent, setIsUrgent] = useState(false);
 
   // Tickets History
-  const [tickets, setTickets] = useState<SupportTicket[]>([
-    {
-      id: 'TKT-89021',
-      bookingId: 'BBBD126789',
-      vendorName: 'Royal Events & Decor',
-      issueType: 'Payment & Invoice',
-      subject: 'Need stamped GST tax invoice copy',
-      description: 'Please provide stamped invoice for company reimbursement.',
-      status: 'In Progress',
-      createdAt: '16 Sep 2026, 11:30 AM',
-      lastReply: 'Our support agent Priya is processing your invoice request.',
-    },
-    {
-      id: 'TKT-87410',
-      bookingId: 'TI1265089',
-      vendorName: 'Royal Beats Dhol Group',
-      issueType: 'Timing Modification',
-      subject: 'Shift baraat entry by 30 minutes',
-      description: 'Vendor agreed to change entry timing from 5 PM to 5:30 PM.',
-      status: 'Resolved',
-      createdAt: '10 Sep 2026, 04:15 PM',
-      lastReply: 'Timings updated successfully in your booking details.',
-    },
-  ]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+
+  React.useEffect(() => {
+    api
+      .tickets()
+      .then((res) => {
+        setTickets(
+          res.items.map((t: ApiTicket) => ({
+            id: t.id,
+            bookingId: t.bookingId || '',
+            vendorName: t.vendorName || '',
+            issueType: t.issueType,
+            subject: t.subject,
+            description: t.description,
+            status: t.status,
+            createdAt: t.createdAt,
+            lastReply: t.lastReply,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   const issueCategories = [
     'Payment / Invoice Inquiry',
@@ -98,27 +97,35 @@ export const SupportTicketScreen: React.FC<SupportTicketScreenProps> = ({
       return;
     }
 
-    const newTicket: SupportTicket = {
-      id: 'TKT-' + Math.floor(10000 + Math.random() * 90000),
-      bookingId: 'BBBD126789',
-      vendorName: 'Royal Events & Decor',
-      issueType: issueType,
-      subject: subject.trim(),
-      description: description.trim(),
-      status: 'Open',
-      createdAt: 'Just now',
-      lastReply: 'Assigned to BBB priority support team. Response within 2 hours.',
-    };
-
-    setTickets((prev) => [newTicket, ...prev]);
-    setSubject('');
-    setDescription('');
-    setActiveTab('history');
-
-    Alert.alert(
-      'Ticket Raised Successfully! 🎫',
-      `Ticket #${newTicket.id} has been registered. Our wedding coordinator will assist you shortly.`
-    );
+    api
+      .createTicket({
+        bookingId: selectedBooking,
+        vendorName: 'Royal Events & Decor',
+        issueType,
+        subject: subject.trim(),
+        description: description.trim(),
+        isUrgent,
+      })
+        .then((res) => {
+          const created = res.ticket;
+          const newTicket: SupportTicket = {
+            id: created?.ticketCode || 'TKT-' + Math.floor(10000 + Math.random() * 90000),
+          bookingId: selectedBooking,
+          vendorName: 'Royal Events & Decor',
+          issueType,
+          subject: subject.trim(),
+          description: description.trim(),
+          status: 'Open',
+          createdAt: 'Just now',
+          lastReply: 'Assigned to BBB priority support team. Response within 2 hours.',
+        };
+        setTickets((prev) => [newTicket, ...prev]);
+        setSubject('');
+        setDescription('');
+        setActiveTab('history');
+        Alert.alert('Ticket Raised Successfully! 🎫', 'Our support team will respond shortly.');
+      })
+      .catch((err) => Alert.alert('Could not create ticket', userMessage(err)));
   };
 
   return (

@@ -18,6 +18,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
+import { api, userMessage } from '../services/api';
 
 interface AddNewAddressScreenProps {
   navigation?: any;
@@ -128,24 +129,49 @@ export const AddNewAddressScreen: React.FC<AddNewAddressScreenProps> = ({
       isDefault: isDefault,
     };
 
-    if (route?.params?.onSave) {
-      route.params.onSave(newAddressObj);
-    }
+    const payload = {
+      type: addressType,
+      title:
+        addressType === 'home'
+          ? 'Home'
+          : addressType === 'work'
+          ? 'Work'
+          : addressType === 'parents'
+          ? "Parents' Home"
+          : 'Other',
+      addressLine1: fullAddress.trim(),
+      landmark: landmark.trim(),
+      cityStatePincode: `${city.trim()}, ${stateName.trim()} - ${pincode.trim()}`,
+      isDefault,
+    };
 
-    Alert.alert(
-      'Address Saved',
-      'Your address has been saved successfully!',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            if (navigation?.goBack) {
-              navigation.goBack();
-            }
-          },
-        },
-      ]
-    );
+    const saveLocal = (saved: typeof newAddressObj) => {
+      if (route?.params?.onSave) route.params.onSave(saved);
+      Alert.alert('Address Saved', 'Your address has been saved successfully!', [
+        { text: 'OK', onPress: () => navigation?.goBack?.() },
+      ]);
+    };
+
+    const request = existingAddress?.id
+      ? api.updateAddress(existingAddress.id, payload)
+      : api.createAddress(payload);
+
+    request
+      .then((res) =>
+        saveLocal({
+          id: res.item._id,
+          type: res.item.type,
+          title: res.item.title,
+          addressLine1: res.item.addressLine1,
+          landmark: res.item.landmark,
+          city: city.trim(),
+          state: stateName.trim(),
+          pincode: pincode.trim(),
+          cityStatePincode: res.item.cityStatePincode,
+          isDefault: res.item.isDefault,
+        }),
+      )
+      .catch((err) => Alert.alert('Could not save address', userMessage(err)));
   };
 
   return (

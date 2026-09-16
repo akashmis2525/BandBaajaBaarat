@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, ApiBooking } from '../../services/api';
 
 interface VendorBookingsProps {
   navigation?: any;
@@ -37,48 +38,43 @@ export const VendorBookingsScreen: React.FC<VendorBookingsProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'in_progress' | 'completed'>('all');
+  const [bookings, setBookings] = useState<VendorBooking[]>([]);
 
-  const [bookings, setBookings] = useState<VendorBooking[]>([
-    {
-      id: 'B1',
-      bookingCode: 'BBBD126789',
-      customerName: 'Rahul Verma & Priya Jain',
-      phone: '+91 98930 11223',
-      eventTitle: 'Wedding Ceremony Mandap & Stage Setup',
-      eventDate: '25 Nov 2026 (Wednesday)',
-      venueAddress: 'Royal Greens, Indore, Madhya Pradesh',
-      totalAmount: 75000,
-      advanceReceived: 25000,
-      balanceDue: 50000,
-      status: 'upcoming',
-    },
-    {
-      id: 'B2',
-      bookingCode: 'BBBD126750',
-      customerName: 'Ananya & Siddharth',
-      phone: '+91 94250 11998',
-      eventTitle: 'Sangeet Stage & DJ Truss Lighting Setup',
-      eventDate: '12 Nov 2026 (Thursday)',
-      venueAddress: 'Brilliant Convention Centre, Indore',
-      totalAmount: 45000,
-      advanceReceived: 15000,
-      balanceDue: 30000,
-      status: 'in_progress',
-    },
-    {
-      id: 'B3',
-      bookingCode: 'BBBD126500',
-      customerName: 'Kapoor Family',
-      phone: '+91 97550 44332',
-      eventTitle: 'Reception Entrance & Carved Mandap',
-      eventDate: '28 Oct 2026',
-      venueAddress: 'Sayaji Hotel, Indore',
-      totalAmount: 85000,
-      advanceReceived: 85000,
-      balanceDue: 0,
-      status: 'completed',
-    },
-  ]);
+  React.useEffect(() => {
+    const statusMap: Record<string, string> = {
+      all: 'All',
+      upcoming: 'Upcoming',
+      in_progress: 'in_progress',
+      completed: 'Completed',
+    };
+    api
+      .bookings(statusMap[activeTab])
+      .then((res) => {
+        setBookings(
+          res.items.map((b: ApiBooking) => ({
+            id: b.id,
+            bookingCode: b.bookingCode,
+            customerName: b.customerName,
+            phone: b.customerPhone,
+            eventTitle: b.eventTitle || b.vendorName,
+            eventDate: b.date,
+            venueAddress: b.location,
+            totalAmount: b.priceNum,
+            advanceReceived: b.advanceReceived,
+            balanceDue: b.balanceDue,
+            status:
+              b.status === 'Upcoming'
+                ? 'upcoming'
+                : b.status === 'in_progress'
+                  ? 'in_progress'
+                  : b.status === 'Completed'
+                    ? 'completed'
+                    : 'cancelled',
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, [activeTab]);
 
   const filteredBookings =
     activeTab === 'all'
@@ -264,6 +260,7 @@ export const VendorBookingsScreen: React.FC<VendorBookingsProps> = ({
                   if (navigation?.navigate) {
                     navigation.navigate('VendorOrderExecution', {
                       bookingId: booking.bookingCode,
+                      bookingMongoId: booking.id,
                       customerName: booking.customerName,
                       eventTitle: booking.eventTitle,
                       eventDate: booking.eventDate,

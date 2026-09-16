@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, ApiMessage, ApiVendor } from '../services/api';
 
 interface ChatMessage {
   id: string;
@@ -35,55 +36,73 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const [inputText, setInputText] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [vendorInfo, setVendorInfo] = useState<{
+    name: string;
+    rating: string;
+    reviews: string;
+    experience: string;
+  }>({
+    name: 'Vendor',
+    rating: '4.6',
+    reviews: '210',
+    experience: '5+ Years',
+  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'm1',
-      sender: 'vendor',
-      text: 'Hello! 👋\nThank you for booking with Royal Beats Dhol Group. We have received your booking for 15 Nov 2026 at 5:00 PM in Indore.\n\nIs there anything specific you would like to discuss?',
-      time: '10:15 AM',
-    },
-    {
-      id: 'm2',
-      sender: 'user',
-      text: 'Hi! I just wanted to confirm if 8 members will be there and what all is included in the package?',
-      time: '10:18 AM',
-      read: true,
-    },
-    {
-      id: 'm3',
-      sender: 'vendor',
-      text: 'Yes, 8 professional dhol players will be there with traditional dress, sound setup and performance for 4 hours as per your booking.\n\nLet us know if you need any additional requests like special songs or entry performance.',
-      time: '10:20 AM',
-    },
-    {
-      id: 'm4',
-      sender: 'user',
-      text: 'Great! Can you also arrange LED dhol and some Punjabi beats for the baraat entry?',
-      time: '10:22 AM',
-      read: true,
-    },
-    {
-      id: 'm5',
-      sender: 'vendor',
-      text: "Yes, we can arrange LED dhol and Punjabi beats. There may be a small additional charge for LED dhol. I'll share the details with you.",
-      time: '10:25 AM',
-    },
-    {
-      id: 'm6',
-      sender: 'vendor',
-      text: 'Would you like to schedule an in-person or video meeting to discuss decoration themes, pricing, and customize the package?',
-      time: '10:28 AM',
-      hasMeetingAction: true,
-    },
-    {
-      id: 'm7',
-      sender: 'vendor',
-      text: "📄 Official Quotation Generated: ₹ 85,000 for Stage Decoration & Event Setup. Let's discuss and finalize the best price!",
-      time: '11:30 AM',
-      hasQuotationAction: true,
-    },
-  ]);
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const list = await api.conversations();
+        let id = list.items[0]?._id;
+        if (!id) {
+          const vendors = await api.vendors({ limit: '1', sort: 'rating' });
+          if (vendors.items[0]) {
+            const opened = await api.openConversation(vendors.items[0].id);
+            id = opened.conversation._id;
+            if (mounted && opened.vendor) {
+              setVendorInfo({
+                name: opened.vendor.businessName || opened.vendor.name,
+                rating: String(opened.vendor.rating),
+                reviews: String(opened.vendor.reviewsCount),
+                experience: opened.vendor.experienceText,
+              });
+            }
+          }
+        } else if (list.items[0].vendorProfile) {
+          const v = list.items[0].vendorProfile as ApiVendor;
+          setVendorInfo({
+            name: v.businessName || v.name,
+            rating: String(v.rating),
+            reviews: String(v.reviewsCount),
+            experience: v.experienceText || '5+ Years',
+          });
+        }
+        if (!id) return;
+        setConversationId(id);
+        const msgs = await api.messages(id);
+        if (mounted) {
+          setMessages(
+            msgs.items.map((m: ApiMessage) => ({
+              id: m.id,
+              sender: m.sender,
+              text: m.text,
+              time: m.time,
+              read: m.read,
+              hasMeetingAction: m.hasMeetingAction,
+              hasQuotationAction: m.hasQuotationAction,
+            })),
+          );
+        }
+      } catch {
+        // keep empty chat chrome
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleBack = () => {
     if (onBack) {
@@ -95,37 +114,38 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
-
-    const newMsg: ChatMessage = {
+    const text = inputText.trim();
+    const optimistic: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
-      text: inputText.trim(),
+      text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       read: false,
     };
-
-    setMessages((prev) => [...prev, newMsg]);
+    setMessages((prev) => [...prev, optimistic]);
     setInputText('');
-
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Automated vendor response
-    setTimeout(() => {
-      const vendorReply: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'vendor',
-        text: 'Noted! Our team will take care of this special arrangement for your baraat. 👍',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, vendorReply]);
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }, 1200);
+    try {
+      let id = conversationId;
+      if (!id) {
+        const vendors = await api.vendors({ limit: '1', sort: 'rating' });
+        if (!vendors.items[0]) return;
+        const opened = await api.openConversation(vendors.items[0].id);
+        id = opened.conversation._id;
+        setConversationId(id);
+      }
+      const saved = await api.sendMessage(id, text);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimistic.id ? { ...saved.message } : m)),
+      );
+    } catch {
+      // keep optimistic message visible
+    }
   };
 
   return (
@@ -184,7 +204,7 @@ export const ChatScreen: React.FC<{ navigation?: any; onBack?: () => void }> = (
           {/* Details */}
           <View style={styles.vendorInfoCol}>
             <View style={styles.vendorTitleRow}>
-              <Text style={styles.vendorTitleName}>Royal Beats Dhol Group</Text>
+              <Text style={styles.vendorTitleName}>{vendorInfo.name}</Text>
               <Ionicons name="checkmark-circle" size={14} color="#8A072D" />
             </View>
 

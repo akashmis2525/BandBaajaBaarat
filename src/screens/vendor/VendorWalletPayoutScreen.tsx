@@ -13,6 +13,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api, WalletTx } from '../../services/api';
 
 interface VendorWalletPayoutProps {
   navigation?: any;
@@ -25,8 +26,41 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  const [availableBalance, setAvailableBalance] = useState(71250);
+  const [availableBalance, setAvailableBalance] = useState(0);
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+  const [transactions, setTransactions] = useState<
+    {
+      id: string;
+      bookingId: string;
+      title: string;
+      date: string;
+      grossAmount: number;
+      commission: number;
+      netAmount: number;
+      status: string;
+    }[]
+  >([]);
+
+  React.useEffect(() => {
+    api
+      .wallet()
+      .then((res) => {
+        setAvailableBalance(res.availableBalance);
+        setTransactions(
+          res.items.map((t: WalletTx) => ({
+            id: t._id,
+            bookingId: t.bookingCode || '',
+            title: t.title,
+            date: new Date(t.createdAt).toLocaleString('en-IN'),
+            grossAmount: t.grossAmount,
+            commission: t.commission,
+            netAmount: t.netAmount,
+            status: t.status,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -63,39 +97,6 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
     setDialogConfig((prev) => ({ ...prev, visible: false }));
   };
 
-  const transactions = [
-    {
-      id: 'TX1',
-      bookingId: 'BBBD126789',
-      title: 'Advance Token — Rahul & Priya Wedding',
-      date: '16 Sep 2026, 11:30 AM',
-      grossAmount: 25000,
-      commission: 1250, // 5% platform fee
-      netAmount: 23750,
-      status: 'credit',
-    },
-    {
-      id: 'TX2',
-      bookingId: 'BBBD126750',
-      title: 'Advance Token — Sangeet Stage Lighting',
-      date: '12 Sep 2026, 04:15 PM',
-      grossAmount: 15000,
-      commission: 750,
-      netAmount: 14250,
-      status: 'credit',
-    },
-    {
-      id: 'TX3',
-      bookingId: 'BBBD126500',
-      title: 'Final Settlement — Kapoor Family Reception',
-      date: '28 Aug 2026, 08:45 PM',
-      grossAmount: 35000,
-      commission: 1750,
-      netAmount: 33250,
-      status: 'credit',
-    },
-  ];
-
   const handleWithdrawAll = () => {
     if (availableBalance <= 0) {
       showDialog({
@@ -118,19 +119,25 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
       onCancel: hideDialog,
       onConfirm: () => {
         setIsProcessingWithdrawal(true);
-        setTimeout(() => {
-          setIsProcessingWithdrawal(false);
-          const transferredAmount = availableBalance;
-          setAvailableBalance(0);
-          showDialog({
-            type: 'success',
-            title: 'Payout Initiated! 🎉',
-            message: `₹${transferredAmount.toLocaleString('en-IN')} has been transferred to your HDFC Bank account successfully.`,
-            confirmText: 'Great!',
-            highlightText: `Reference ID: IMPS${Date.now().toString().slice(-8)}`,
-            onConfirm: hideDialog,
+        api
+          .withdraw(availableBalance)
+          .then(() => {
+            setIsProcessingWithdrawal(false);
+            const transferredAmount = availableBalance;
+            setAvailableBalance(0);
+            showDialog({
+              type: 'success',
+              title: 'Payout Initiated! 🎉',
+              message: `₹${transferredAmount.toLocaleString('en-IN')} has been transferred to your HDFC Bank account successfully.`,
+              confirmText: 'Great!',
+              highlightText: `Reference ID: IMPS${Date.now().toString().slice(-8)}`,
+              onConfirm: hideDialog,
+            });
+          })
+          .catch(() => {
+            setIsProcessingWithdrawal(false);
+            hideDialog();
           });
-        }, 600);
       },
     });
   };

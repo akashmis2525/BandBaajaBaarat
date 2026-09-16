@@ -14,9 +14,10 @@ import {
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { useAuth, authError } from '../../context/AuthContext';
 
 interface VendorLoginScreenProps {
-  onSuccess: () => void;
+  onSuccess: (isKycComplete?: boolean) => void;
   onBack: () => void;
   onSwitchToCustomer?: () => void;
 }
@@ -27,10 +28,12 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
   onSwitchToCustomer,
 }) => {
   const insets = useSafeAreaInsets();
-  const [mobileNumber, setMobileNumber] = useState('9826012345');
+  const { sendOtp, loginWithOtp, vendorEmailLogin } = useAuth();
+  const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
-  const [businessEmail, setBusinessEmail] = useState('contact@royalevents.in');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'mobile' | 'email'>('mobile');
 
   // Dialog State
@@ -68,7 +71,7 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
     setDialogConfig((prev) => ({ ...prev, visible: false }));
   };
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (mobileNumber.length < 10) {
       showDialog({
         type: 'warning',
@@ -79,30 +82,57 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
       });
       return;
     }
-    setIsOtpSent(true);
-    setOtp('1234');
-    showDialog({
-      type: 'success',
-      title: 'OTP Sent Successfully! 📩',
-      message: `Demo 4-digit OTP has been dispatched to +91 ${mobileNumber}.`,
-      confirmText: 'Auto-Fill 1234',
-      highlightText: '🔑 Demo Partner OTP: 1234',
-      onConfirm: hideDialog,
-    });
-  };
-
-  const handleVerifyLogin = () => {
-    if (activeTab === 'mobile' && isOtpSent && otp !== '1234') {
+    try {
+      const code = await sendOtp(mobileNumber.replace(/\D/g, '').slice(-10), 'vendor');
+      setIsOtpSent(true);
+      if (code) setOtp(code);
+      showDialog({
+        type: 'success',
+        title: 'OTP Sent Successfully! 📩',
+        message: `A 4-digit OTP has been dispatched to +91 ${mobileNumber}.`,
+        confirmText: code ? `Auto-Fill ${code}` : 'OK',
+        highlightText: code ? `🔑 Partner OTP: ${code}` : undefined,
+        onConfirm: hideDialog,
+      });
+    } catch (err) {
       showDialog({
         type: 'error',
-        title: 'Incorrect OTP',
-        message: 'The OTP entered is incorrect. Please enter demo verification OTP: 1234.',
+        title: 'OTP Failed',
+        message: authError(err),
         confirmText: 'Try Again',
         onConfirm: hideDialog,
       });
-      return;
     }
-    onSuccess();
+  };
+
+  const handleVerifyLogin = async () => {
+    try {
+      if (activeTab === 'email') {
+        await vendorEmailLogin(businessEmail.trim(), password);
+        onSuccess(true);
+        return;
+      }
+      if (!isOtpSent) {
+        showDialog({
+          type: 'warning',
+          title: 'OTP Required',
+          message: 'Please request and enter the OTP sent to your mobile number.',
+          confirmText: 'OK',
+          onConfirm: hideDialog,
+        });
+        return;
+      }
+      const result = await loginWithOtp(mobileNumber.replace(/\D/g, '').slice(-10), otp, 'vendor');
+      onSuccess(result.isKycComplete);
+    } catch (err) {
+      showDialog({
+        type: 'error',
+        title: 'Login Failed',
+        message: authError(err),
+        confirmText: 'Try Again',
+        onConfirm: hideDialog,
+      });
+    }
   };
 
   return (
@@ -283,7 +313,8 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
                 style={styles.textInput}
                 placeholder="••••••••"
                 secureTextEntry
-                value="password123"
+                value={password}
+                onChangeText={setPassword}
               />
 
               <TouchableOpacity

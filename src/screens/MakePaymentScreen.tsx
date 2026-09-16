@@ -16,6 +16,7 @@ import {
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface MakePaymentScreenProps {
   route?: any;
@@ -55,12 +56,27 @@ export const MakePaymentScreen: React.FC<MakePaymentScreenProps> = ({
   };
 
   const handlePayNow = () => {
+    const mongoId = route?.params?.bookingMongoId || route?.params?.id;
     setIsProcessing(true);
 
-    setTimeout(() => {
+    const finishSuccess = () => {
       setIsProcessing(false);
       setIsSuccessModalVisible(true);
-    }, 1200);
+    };
+
+    if (!mongoId) {
+      setIsProcessing(false);
+      Alert.alert('Payment', 'No booking was found to collect payment for.');
+      return;
+    }
+
+    api
+      .confirmPayment(String(mongoId), selectedMethod)
+      .then(finishSuccess)
+      .catch((err) => {
+        setIsProcessing(false);
+        Alert.alert('Payment', userMessage(err, 'Payment could not be completed.'));
+      });
   };
 
   const handleSuccessDone = () => {

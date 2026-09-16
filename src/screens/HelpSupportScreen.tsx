@@ -16,6 +16,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
+import { api } from '../services/api';
 
 interface FaqItem {
   id: string;
@@ -31,7 +32,7 @@ export const HelpSupportScreen: React.FC<{ navigation?: any; onBack?: () => void
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-  const faqs: FaqItem[] = [
+  const defaultFaqs: FaqItem[] = [
     {
       id: 'faq1',
       question: 'How do I book a service?',
@@ -63,6 +64,25 @@ export const HelpSupportScreen: React.FC<{ navigation?: any; onBack?: () => void
         'Once booked, you can directly call or live chat with the vendor from the Chat tab or Booking Details page.',
     },
   ];
+
+  const [faqs, setFaqs] = useState<FaqItem[]>(defaultFaqs);
+
+  React.useEffect(() => {
+    api
+      .faqs()
+      .then((res) => {
+        if (res.items?.length) {
+          setFaqs(
+            res.items.map((item, index) => ({
+              id: item._id || `faq${index + 1}`,
+              question: item.question,
+              answer: item.answer,
+            })),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   const filteredFaqs = faqs.filter((f) =>
     f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||

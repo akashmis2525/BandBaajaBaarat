@@ -18,6 +18,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 export const PaymentBookingScreen: React.FC<{ navigation?: any; route?: any; onBack?: () => void }> = ({
   navigation,
@@ -102,14 +103,27 @@ export const PaymentBookingScreen: React.FC<{ navigation?: any; route?: any; onB
     };
 
     setIsProcessing(true);
-    setTimeout(() => {
+    const mongoId = route?.params?.bookingMongoId || route?.params?.id;
+    const finish = () => {
       setIsProcessing(false);
       if (navigation?.navigate) {
         navigation.navigate('BookingConfirmed', bookingPayload);
       } else if (navigation?.replace) {
         navigation.replace('BookingConfirmed', bookingPayload);
       }
-    }, 250);
+    };
+    if (!mongoId) {
+      setIsProcessing(false);
+      Alert.alert('Payment', 'No booking was found to collect payment for.');
+      return;
+    }
+    api
+      .confirmPayment(String(mongoId), selectedMethod)
+      .then(finish)
+      .catch((err) => {
+        setIsProcessing(false);
+        Alert.alert('Payment', userMessage(err, 'Payment could not be completed.'));
+      });
   };
 
   return (

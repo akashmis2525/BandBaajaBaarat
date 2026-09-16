@@ -14,6 +14,7 @@ import {
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api, VendorMetrics } from '../../services/api';
 
 interface VendorDashboardProps {
   navigation?: any;
@@ -28,6 +29,23 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [isOnline, setIsOnline] = useState(true);
+  const [metrics, setMetrics] = useState<VendorMetrics | null>(null);
+  const [vendorName, setVendorName] = useState('Royal Events & Decor');
+  const [vendorSubtitle, setVendorSubtitle] = useState('Mandap & Decor Partner • Indore, MP');
+
+  React.useEffect(() => {
+    api
+      .vendorDashboard()
+      .then((res) => {
+        setMetrics(res.metrics);
+        setIsOnline(res.metrics.isOnline);
+        if (res.vendor) {
+          setVendorName(res.vendor.businessName || res.vendor.name);
+          setVendorSubtitle(`${res.vendor.category} • ${res.vendor.city}`);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -97,14 +115,14 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
           <View style={styles.vendorTitleCol}>
             <View style={styles.vendorNameRow}>
               <Text style={styles.vendorNameText} numberOfLines={1}>
-                Royal Events & Decor
+                {vendorName}
               </Text>
               <View style={styles.verifiedIconBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#15803D" />
               </View>
             </View>
             <Text style={styles.vendorSubtitleText}>
-              Mandap & Decor Partner • Indore, MP
+              {vendorSubtitle}
             </Text>
           </View>
         </View>
@@ -116,6 +134,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
           onPress={() => {
             const nextState = !isOnline;
             setIsOnline(nextState);
+            api.updateVendorProfile({ isOnline: nextState }).catch(() => undefined);
             showDialog({
               type: nextState ? 'success' : 'warning',
               title: nextState ? 'Storefront Online 🟢' : 'Storefront Offline ⏸️',
@@ -142,7 +161,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
           <View style={styles.revenueTopRow}>
             <View>
               <Text style={styles.revenueSubTitle}>Available Wallet Balance</Text>
-              <Text style={styles.revenueMainAmount}>₹ 71,250</Text>
+              <Text style={styles.revenueMainAmount}>₹ {(metrics?.walletBalance ?? 71250).toLocaleString('en-IN')}</Text>
             </View>
             <TouchableOpacity
               style={styles.withdrawBtn}
@@ -158,21 +177,21 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
 
           <View style={styles.metricsTripleRow}>
             <View style={styles.metricCol}>
-              <Text style={styles.metricVal}>₹ 2.45L</Text>
+              <Text style={styles.metricVal}>₹ {((metrics?.totalEarned ?? 245000) / 100000).toFixed(2)}L</Text>
               <Text style={styles.metricLabel}>Total Earned</Text>
             </View>
             <View style={styles.metricColDivider} />
             <View style={styles.metricCol}>
-              <Text style={styles.metricVal}>₹ 65,000</Text>
+              <Text style={styles.metricVal}>₹ {(metrics?.monthEarned ?? 65000).toLocaleString('en-IN')}</Text>
               <Text style={styles.metricLabel}>This Month</Text>
             </View>
             <View style={styles.metricColDivider} />
             <View style={styles.metricCol}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="star" size={13} color="#F59E0B" style={{ marginRight: 2 }} />
-                <Text style={styles.metricVal}>4.8</Text>
+                <Text style={styles.metricVal}>{metrics?.rating ?? 4.8}</Text>
               </View>
-              <Text style={styles.metricLabel}>320 Reviews</Text>
+              <Text style={styles.metricLabel}>{metrics?.reviewsCount ?? 320} Reviews</Text>
             </View>
           </View>
         </View>
@@ -187,7 +206,7 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
             <View style={[styles.statTileIcon, { backgroundColor: '#FFF1F2' }]}>
               <Ionicons name="flash" size={18} color="#D81B60" />
             </View>
-            <Text style={styles.statTileNumber}>7</Text>
+            <Text style={styles.statTileNumber}>{metrics?.newLeads ?? 7}</Text>
             <Text style={styles.statTileLabel}>New Leads</Text>
             <View style={styles.statTileAction}>
               <Text style={styles.statTileActionText}>View Leads →</Text>

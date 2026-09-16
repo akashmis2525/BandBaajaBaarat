@@ -15,6 +15,8 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Assets } from '../constants/assets';
+import { api, ApiBooking } from '../services/api';
+import { resolveImage } from '../utils/images';
 
 export interface BookingItem {
   id: string;
@@ -38,90 +40,45 @@ export const BookingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
 }) => {
   const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'Upcoming' | 'Completed' | 'Cancelled'>('All');
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [counts, setCounts] = useState({ all: 0, upcoming: 0, completed: 0, cancelled: 0 });
 
-  const bookings: BookingItem[] = [
-    {
-      id: '1',
-      bookingId: '#BB20261220',
-      badge: 'Upcoming',
-      vendorName: 'The Grand Palace',
-      category: 'Banquet Hall, Indore',
-      date: '20 Dec 2026',
-      time: '7:00 PM - 11:00 PM',
-      location: '123, AB Road, Vijay Nagar, Indore',
-      price: '₹88,500',
-      priceNum: 88500,
-      image: Assets.serviceDecorators,
-      phone: '+91 98265 99887',
-      actions: ['reschedule', 'cancel', 'view_details'],
-    },
-    {
-      id: '2',
-      bookingId: '#BB20261115',
-      badge: 'Upcoming',
-      vendorName: 'Royal Beats Dhol Group',
-      category: 'Dhol & Music, Indore',
-      date: '15 Nov 2026',
-      time: '6:00 PM - 10:00 PM',
-      location: 'Indore, Madhya Pradesh',
-      price: '₹5,999',
-      priceNum: 5999,
-      image: Assets.weddingMandapArt,
-      phone: '+91 98260 12345',
-      actions: ['reschedule', 'cancel', 'view_details'],
-    },
-    {
-      id: '3',
-      bookingId: '#BB20261005',
-      badge: 'Completed',
-      vendorName: 'Shivam Car Rentals',
-      category: 'Wedding Car, Indore',
-      date: '05 Oct 2026',
-      time: '9:00 AM - 5:00 PM',
-      location: 'Indore, Madhya Pradesh',
-      price: '₹8,000',
-      priceNum: 8000,
-      image: Assets.serviceBuggi,
-      phone: '+91 98261 44556',
-      actions: ['rebook', 'view_details', 'review'],
-    },
-    {
-      id: '4',
-      bookingId: '#BB20260928',
-      badge: 'Completed',
-      vendorName: 'Glam Look Makeup Studio',
-      category: 'Bridal Makeup, Indore',
-      date: '28 Sep 2026',
-      time: '10:00 AM - 2:00 PM',
-      location: 'Indore, Madhya Pradesh',
-      price: '₹12,000',
-      priceNum: 12000,
-      image: Assets.serviceMehndi,
-      phone: '+91 94250 11223',
-      actions: ['rebook', 'view_details', 'review'],
-    },
-    {
-      id: '5',
-      bookingId: '#BB20260812',
-      badge: 'Cancelled',
-      vendorName: 'Shree Caterers',
-      category: 'Catering Service, Indore',
-      date: '12 Aug 2026',
-      time: '7:00 PM - 11:00 PM',
-      location: 'Indore, Madhya Pradesh',
-      price: '₹600',
-      priceNum: 600,
-      image: Assets.serviceClothes,
-      phone: '+91 98262 77889',
-      actions: ['book_again', 'view_details'],
-    },
-  ];
+  React.useEffect(() => {
+    api
+      .bookings(selectedFilter)
+      .then((res) => {
+        setBookings(
+          res.items.map((b: ApiBooking) => ({
+            id: b.id,
+            bookingId: b.bookingId,
+            badge: b.badge,
+            vendorName: b.vendorName,
+            category: b.category,
+            date: b.date,
+            time: b.time,
+            location: b.location,
+            price: b.price,
+            priceNum: b.priceNum,
+            image: resolveImage(b.imageKey),
+            phone: b.phone,
+            actions: b.actions as BookingItem['actions'],
+          })),
+        );
+        setCounts({
+          all: res.counts.all || 0,
+          upcoming: res.counts.upcoming || 0,
+          completed: res.counts.completed || 0,
+          cancelled: res.counts.cancelled || 0,
+        });
+      })
+      .catch(() => undefined);
+  }, [selectedFilter]);
 
   const filterTabs = [
-    { key: 'All', label: 'All (5)' },
-    { key: 'Upcoming', label: 'Upcoming (2)' },
-    { key: 'Completed', label: 'Completed (2)' },
-    { key: 'Cancelled', label: 'Cancelled (1)' },
+    { key: 'All', label: `All (${counts.all})` },
+    { key: 'Upcoming', label: `Upcoming (${counts.upcoming})` },
+    { key: 'Completed', label: `Completed (${counts.completed})` },
+    { key: 'Cancelled', label: `Cancelled (${counts.cancelled})` },
   ] as const;
 
   const filteredBookings = bookings.filter((item) => {
@@ -140,18 +97,7 @@ export const BookingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
   };
 
   const handleViewDetails = (booking: BookingItem) => {
-    if (booking.vendorName.includes('Grand Palace') || booking.id === '1') {
-      navigation?.navigate('VenueBookingDetails', {
-        serviceTitle: 'The Grand Palace',
-        category: 'Banquet Hall',
-        price: 75000,
-        date: '20 Dec 2026',
-        time: '7:00 PM - 11:00 PM',
-        location: '123, AB Road, Vijay Nagar, Indore',
-      });
-    } else {
-      navigation?.navigate('BookingDetails', { booking });
-    }
+    navigation?.navigate('BookingDetails', { bookingId: booking.id, booking });
   };
 
   const handleReschedule = (booking: BookingItem) => {

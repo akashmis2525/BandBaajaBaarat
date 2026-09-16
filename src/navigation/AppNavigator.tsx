@@ -70,6 +70,7 @@ import { VendorPortfolioManagerScreen } from '../screens/vendor/VendorPortfolioM
 import { VendorProfileSettingsScreen } from '../screens/vendor/VendorProfileSettingsScreen';
 
 import { useAuth } from '../context/AuthContext';
+import { ActivityIndicator, View as RNView } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -366,8 +367,29 @@ export const AppNavigator: React.FC = () => {
   >('splash');
 
   const [appMode, setAppMode] = useState<'customer' | 'vendor'>('customer');
-  const { login } = useAuth();
+  const { login, user, isReady, logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const [sessionRouted, setSessionRouted] = useState(false);
+
+  React.useEffect(() => {
+    if (!isReady || sessionRouted) return;
+    if (user.isAuthenticated && user.accountRole === 'vendor') {
+      setAppMode('vendor');
+      setCurrentStep(user.isKycComplete ? 'vendor_main' : 'vendor_kyc');
+    } else if (user.isAuthenticated && user.accountRole === 'customer') {
+      setAppMode('customer');
+      setCurrentStep(user.isProfileComplete ? 'main' : 'profile');
+    }
+    setSessionRouted(true);
+  }, [isReady, user, sessionRouted]);
+
+  if (!isReady) {
+    return (
+      <RNView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#5D0D10' }}>
+        <ActivityIndicator color="#E5A580" />
+      </RNView>
+    );
+  }
 
   if (currentStep === 'splash') {
     return (
@@ -413,9 +435,9 @@ export const AppNavigator: React.FC = () => {
   if (currentStep === 'login') {
     return (
       <LoginScreen
-        onSuccess={(phone) => {
+        onSuccess={(phone, extras) => {
           login(phone);
-          setCurrentStep('profile');
+          setCurrentStep(extras?.isProfileComplete ? 'main' : 'profile');
         }}
         onBack={() => setCurrentStep('location')}
         onSkip={() => setCurrentStep('main')}
@@ -437,7 +459,7 @@ export const AppNavigator: React.FC = () => {
   if (currentStep === 'vendor_login') {
     return (
       <VendorLoginScreen
-        onSuccess={() => setCurrentStep('vendor_kyc')}
+        onSuccess={(isKycComplete) => setCurrentStep(isKycComplete ? 'vendor_main' : 'vendor_kyc')}
         onBack={() => setCurrentStep('role_select')}
         onSwitchToCustomer={() => {
           setAppMode('customer');
@@ -469,6 +491,7 @@ export const AppNavigator: React.FC = () => {
             setCurrentStep('main');
           }}
           onLogout={() => {
+            logout();
             setAppMode('customer');
             setCurrentStep('role_select');
           }}
@@ -527,7 +550,10 @@ export const AppNavigator: React.FC = () => {
           {(props) => (
             <ProfileNavigator
               {...props}
-              onLogout={() => setCurrentStep('role_select')}
+              onLogout={() => {
+                logout();
+                setCurrentStep('role_select');
+              }}
               onSwitchToVendor={() => {
                 setAppMode('vendor');
                 setCurrentStep('vendor_main');

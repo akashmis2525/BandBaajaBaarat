@@ -16,6 +16,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
+import { api, ApiAddress } from '../services/api';
 
 export interface AddressItem {
   id: string;
@@ -68,7 +69,26 @@ const initialAddresses: AddressItem[] = [
 
 export const MyAddressesScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const [addresses, setAddresses] = useState<AddressItem[]>(initialAddresses);
+  const [addresses, setAddresses] = useState<AddressItem[]>([]);
+
+  React.useEffect(() => {
+    api
+      .addresses()
+      .then((res) => {
+        setAddresses(
+          res.items.map((a: ApiAddress) => ({
+            id: a._id,
+            type: a.type,
+            title: a.title,
+            isDefault: a.isDefault,
+            addressLine1: a.addressLine1,
+            cityStatePincode: a.cityStatePincode,
+            landmark: a.landmark,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Add / Edit Modal state
   const [showAddModal, setShowAddModal] = useState(false);

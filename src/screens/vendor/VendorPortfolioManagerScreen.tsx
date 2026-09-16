@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 interface VendorPortfolioManagerProps {
   navigation?: any;
@@ -95,6 +96,24 @@ export const VendorPortfolioManagerScreen: React.FC<VendorPortfolioManagerProps>
     },
   ]);
 
+  React.useEffect(() => {
+    api
+      .portfolio()
+      .then((res) => {
+        if (res.items?.length) {
+          setPhotos(
+            res.items.map((i) => ({
+              id: i._id,
+              title: i.title,
+              uri: i.uri,
+              views: i.views,
+            })),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   const handleUploadPhoto = () => {
     showDialog({
       type: 'royal',
@@ -110,6 +129,7 @@ export const VendorPortfolioManagerScreen: React.FC<VendorPortfolioManagerProps>
           uri: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80',
           views: 1,
         };
+        api.addPortfolio({ title: newP.title, uri: newP.uri }).catch(() => undefined);
         setPhotos([newP, ...photos]);
         showDialog({
           type: 'success',

@@ -14,6 +14,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
+import { api, ApiPaymentMethod } from '../services/api';
 
 export interface SavedPaymentMethod {
   id: string;
@@ -67,7 +68,26 @@ export const SavedPaymentMethodsScreen: React.FC<{ navigation?: any; onBack?: ()
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>(initialPaymentMethods);
+  const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
+
+  React.useEffect(() => {
+    api
+      .paymentMethods()
+      .then((res) => {
+        setPaymentMethods(
+          res.items.map((p: ApiPaymentMethod) => ({
+            id: p._id,
+            type: p.type === 'netbanking' ? 'wallet' : p.type,
+            brand: p.brand,
+            title: p.title,
+            subtitle: p.subtitle,
+            expiry: p.expiry,
+            isDefault: p.isDefault,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
   const [activeMenuMethod, setActiveMenuMethod] = useState<SavedPaymentMethod | null>(null);
 
   const handleBack = () => {

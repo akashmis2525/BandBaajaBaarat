@@ -16,6 +16,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface RateReviewScreenProps {
   navigation?: any;
@@ -104,6 +105,26 @@ export const RateReviewScreen: React.FC<RateReviewScreenProps> = ({
   };
 
   const handleSubmitReview = () => {
+    const vendorProfileId = route?.params?.vendorProfileId || route?.params?.booking?.vendorProfileId;
+    if (vendorProfileId) {
+      api
+        .createReview({
+          vendorProfileId,
+          bookingId: route?.params?.booking?.id,
+          rating,
+          tags: selectedTags,
+          text: reviewText,
+        })
+        .then(() => {
+          Alert.alert(
+            'Review Submitted! 🎉',
+            'Thank you for rating this vendor. Your review has been posted to help other families find top vendors!',
+            [{ text: 'Back to Chat', onPress: handleBack }],
+          );
+        })
+        .catch((err) => Alert.alert('Could not submit review', userMessage(err)));
+      return;
+    }
     Alert.alert(
       'Review Submitted! 🎉',
       'Thank you for rating Royal Beats Dhol Group. Your review and photos have been posted to help other families find top vendors!',

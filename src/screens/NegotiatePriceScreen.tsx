@@ -15,6 +15,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Assets } from '../constants/assets';
+import { api } from '../services/api';
 
 interface NegotiatePriceProps {
   navigation?: any;
@@ -41,6 +42,18 @@ export const NegotiatePriceScreen: React.FC<NegotiatePriceProps> = ({
   };
 
   const handleProceedToBooking = () => {
+    const vendorProfileId = route?.params?.vendorProfileId;
+    const originalAmount = route?.params?.originalAmount || 85000;
+    const agreed = route?.params?.amount || 75000;
+    if (vendorProfileId) {
+      api
+        .createNegotiation({
+          vendorProfileId,
+          originalAmount,
+          counterOfferAmount: agreed,
+        })
+        .catch(() => undefined);
+    }
     if (navigation?.navigate) {
       navigation.navigate('BookingSummary', {
         vendorName: 'Royal Events & Decor',

@@ -17,6 +17,8 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, ApiVendor } from '../services/api';
+import { resolveImage } from '../utils/images';
 
 export interface SavedItem {
   id: string;
@@ -39,78 +41,30 @@ export const SavedItemsScreen: React.FC<{ navigation?: any; onBack?: () => void 
 }) => {
   const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'Venues' | 'Vendors' | 'Services'>('All');
-  const [items, setItems] = useState<SavedItem[]>([
-    {
-      id: '1',
-      type: 'Venue',
-      title: 'The Grand Palace',
-      subtitle: 'Banquet Hall, Indore',
-      rating: 4.8,
-      reviewsCount: 320,
-      price: '₹75,000',
-      priceUnit: 'Starting Price',
-      image: Assets.serviceDecorators,
-      isFavorite: true,
-      features: ['AC Banquet Hall', '500-1500 Guests', 'In-house Catering', 'Valet Parking'],
-      capacityOrTeam: '1200 Guests Capacity',
-    },
-    {
-      id: '2',
-      type: 'Vendor',
-      title: 'Royal Beats Dhol Group',
-      subtitle: 'Dhol & Music, Indore',
-      rating: 4.9,
-      reviewsCount: 250,
-      price: '₹5,999',
-      priceUnit: 'Starting Price',
-      image: Assets.weddingMandapArt,
-      isFavorite: true,
-      features: ['4 Punjabi Dhol Players', '2 High-Bass Tashas', 'Rajasthani Poshak', 'Baarat Entry Beats'],
-      capacityOrTeam: '6 Artists Team',
-    },
-    {
-      id: '3',
-      type: 'Vendor',
-      title: 'Glam Look Makeup Studio',
-      subtitle: 'Bridal Makeup, Indore',
-      rating: 4.7,
-      reviewsCount: 180,
-      price: '₹12,000',
-      priceUnit: 'Starting Price',
-      image: Assets.serviceMehndi,
-      isFavorite: true,
-      features: ['HD Airbrush Makeup', 'Hair Styling & Draping', 'Premium International Brands', 'On-venue Service'],
-      capacityOrTeam: 'Master Artist + 2 Assistants',
-    },
-    {
-      id: '4',
-      type: 'Service',
-      title: 'Shivam Car Rentals',
-      subtitle: 'Wedding Car, Indore',
-      rating: 4.6,
-      reviewsCount: 95,
-      price: '₹8,000',
-      priceUnit: 'Starting Price',
-      image: Assets.serviceBuggi,
-      isFavorite: true,
-      features: ['Luxury Audi A4 / BMW', 'Fresh Flower Decoration', 'Chauffeur in Uniform', '8 Hours / 80 Km'],
-      capacityOrTeam: 'Luxury 4-Seater Sedan',
-    },
-    {
-      id: '5',
-      type: 'Service',
-      title: 'Shree Caterers',
-      subtitle: 'Catering Service, Indore',
-      rating: 4.5,
-      reviewsCount: 210,
-      price: '₹600',
-      priceUnit: 'Per Plate',
-      image: Assets.serviceClothes,
-      isFavorite: true,
-      features: ['50+ Pure Veg Delicacies', 'Live Chaat & Dessert Counters', 'Royal Crockery Setup', 'Trained Serving Staff'],
-      capacityOrTeam: 'Min 200 - Max 3000 Plates',
-    },
-  ]);
+  const [items, setItems] = useState<SavedItem[]>([]);
+
+  React.useEffect(() => {
+    api
+      .favorites(selectedFilter)
+      .then((res) => {
+        setItems(
+          res.items.map((v: ApiVendor) => ({
+            id: v.id,
+            type: (v.type as SavedItem['type']) || 'Vendor',
+            title: v.title || v.businessName || v.name,
+            subtitle: v.subtitle || `${v.category}, ${v.city}`,
+            rating: v.rating,
+            reviewsCount: v.reviewsCount,
+            price: v.startingPriceText || v.price,
+            priceUnit: v.priceUnit || 'Starting Price',
+            image: resolveImage(v.imageKey),
+            isFavorite: true,
+            features: v.features,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, [selectedFilter]);
 
   const [selectedItemForMenu, setSelectedItemForMenu] = useState<SavedItem | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
@@ -126,6 +80,7 @@ export const SavedItemsScreen: React.FC<{ navigation?: any; onBack?: () => void 
   };
 
   const handleToggleFavorite = (id: string) => {
+    api.toggleFavorite(id).catch(() => undefined);
     setItems((prev) =>
       prev.map((item) => {
         if (item.id === id) {

@@ -17,24 +17,45 @@
 ## 📁 Project Structure
 ```
 BandBaajaBaarat/
-├── assets/
-│   └── images/
-│       ├── logo-light.jpg       # Logo for Light Mode
-│       ├── logo-dark.jpg        # Logo for Dark Mode / Splash
-│       ├── app-icon.jpg         # App Icon (Royal Gold Border)
-│       ├── app-store-icon.jpg   # iOS App Store Icon
-│       └── play-store-icon.jpg  # Android Play Store Icon
+├── backend/                     # Express + MongoDB API
+│   ├── src/
+│   └── docs/API.md
 ├── src/
-│   ├── components/              # RoyalButton, RoyalCard, RoyalHeader
-│   ├── constants/               # Assets mapping & static data
-│   ├── navigation/              # AppNavigator & Bottom Tabs
-│   ├── screens/                 # SplashScreen, HomeScreen, ServicesScreen, BookingsScreen, ProfileScreen
-│   ├── theme/                   # Colors, Typography, Spacing
-│   └── types/                   # Navigation & Data TypeScript interfaces
-├── App.tsx                      # Root App Entry
-├── app.json                     # Expo & App Configuration
+│   ├── services/api.ts          # Frontend API client
+│   ├── screens/
+│   └── ...
+├── App.tsx
 └── package.json
 ```
+
+---
+
+## 🔌 Backend + MongoDB
+
+1. Start MongoDB locally (`mongod`) or Docker:
+   ```bash
+   docker run -d --name bbb-mongo -p 27017:27017 mongo:7
+   ```
+2. Copy env and install:
+   ```bash
+   cd backend
+   copy .env.example .env   # Windows
+   npm install
+   npm run seed
+   npm run dev
+   ```
+3. API: `http://localhost:4000/api`  
+   Docs: `backend/docs/API.md`
+
+Frontend env (project root `.env`):
+```
+EXPO_PUBLIC_API_URL=http://localhost:4000
+```
+On a physical phone, use your computer's LAN IP, e.g. `http://192.168.1.10:4000`.
+
+Seeded vendor login:
+- Phone OTP: `9826012345` (OTP is returned by the API in development)
+- Email: `contact@royalevents.in` / password `Vendor@123`
 
 ---
 

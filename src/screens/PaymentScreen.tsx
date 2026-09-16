@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface PaymentScreenProps {
   route?: {
@@ -218,14 +219,29 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       image: vendor.image || Assets.serviceBrassBand,
     };
 
-    setTimeout(() => {
+    setIsProcessing(true);
+    const mongoId = (route?.params as { bookingMongoId?: string; id?: string } | undefined)?.bookingMongoId
+      || (route?.params as { bookingMongoId?: string; id?: string } | undefined)?.id;
+    const finish = () => {
       setIsProcessing(false);
       if (navigation?.navigate) {
         navigation.navigate('BookingConfirmed', bookingPayload);
       } else if (navigation?.replace) {
         navigation.replace('BookingConfirmed', bookingPayload);
       }
-    }, 300);
+    };
+    if (!mongoId) {
+      setIsProcessing(false);
+      Alert.alert('Payment', 'No booking was found to collect payment for.');
+      return;
+    }
+    api
+      .confirmPayment(String(mongoId), selectedMethod)
+      .then(finish)
+      .catch((err) => {
+        setIsProcessing(false);
+        Alert.alert('Payment', userMessage(err, 'Payment could not be completed.'));
+      });
   };
 
   const topBanks = ['HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 'Kotak Bank', 'Punjab National Bank'];

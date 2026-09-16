@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import * as Location from 'expo-location';
+import { api } from '../services/api';
 
 export interface LocationData {
   city: string;
@@ -123,6 +124,12 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       isLiveGPS: false,
       activeVendorsCount: vendorMap[city] || 150,
     });
+    api
+      .locationStats(city)
+      .then((res) => {
+        setLocation((prev) => ({ ...prev, activeVendorsCount: res.activeVendorsCount }));
+      })
+      .catch(() => undefined);
   };
 
   return (

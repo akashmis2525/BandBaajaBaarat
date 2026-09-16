@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 interface VendorCalendarProps {
   navigation?: any;
@@ -26,6 +27,15 @@ export const VendorCalendarScreen: React.FC<VendorCalendarProps> = ({
   const insets = useSafeAreaInsets();
   const [selectedMonth, setSelectedMonth] = useState('November 2026');
   const [blockedDates, setBlockedDates] = useState<number[]>([12, 25, 26]);
+
+  React.useEffect(() => {
+    api
+      .calendar(selectedMonth)
+      .then((res) => {
+        if (Array.isArray(res.blockedDates)) setBlockedDates(res.blockedDates);
+      })
+      .catch(() => undefined);
+  }, [selectedMonth]);
 
   // Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -65,8 +75,13 @@ export const VendorCalendarScreen: React.FC<VendorCalendarProps> = ({
   const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1);
 
   const handleToggleDate = (day: number) => {
-    if (blockedDates.includes(day)) {
-      setBlockedDates(blockedDates.filter((d) => d !== day));
+    const wasBlocked = blockedDates.includes(day);
+    const next = wasBlocked
+      ? blockedDates.filter((d) => d !== day)
+      : [...blockedDates, day];
+    setBlockedDates(next);
+    api.updateCalendar(selectedMonth, next).catch(() => undefined);
+    if (wasBlocked) {
       showDialog({
         type: 'success',
         title: 'Date Unblocked! 🟢',
@@ -75,7 +90,6 @@ export const VendorCalendarScreen: React.FC<VendorCalendarProps> = ({
         onConfirm: hideDialog,
       });
     } else {
-      setBlockedDates([...blockedDates, day]);
       showDialog({
         type: 'royal',
         title: 'Date Blocked 🔒',

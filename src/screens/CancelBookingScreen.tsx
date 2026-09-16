@@ -16,6 +16,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface CancelBookingScreenProps {
   navigation?: any;
@@ -114,6 +115,19 @@ export const CancelBookingScreen: React.FC<CancelBookingScreenProps> = ({
           text: 'Yes, Cancel',
           style: 'destructive',
           onPress: () => {
+            if (booking.id && booking.id.length === 24) {
+              api
+                .cancelBooking(booking.id, selectedReason)
+                .then(() => {
+                  Alert.alert(
+                    'Booking Cancelled',
+                    `Your booking ${booking.bookingId} with ${booking.vendorName} has been cancelled successfully. Refund of ${booking.price || '₹88,500'} has been initiated to your original payment method.`,
+                    [{ text: 'OK', onPress: () => navigation?.navigate('BookingsList') }],
+                  );
+                })
+                .catch((err) => Alert.alert('Cancellation failed', userMessage(err)));
+              return;
+            }
             Alert.alert(
               'Booking Cancelled',
               `Your booking ${booking.bookingId} with ${booking.vendorName} has been cancelled successfully. Refund of ${booking.price || '₹88,500'} has been initiated to your original payment method.`,

@@ -16,6 +16,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
 
 interface BookingSummaryProps {
   route?: any;
@@ -109,26 +110,45 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
     }
 
     if (navigation?.navigate) {
-      navigation.navigate('MakePayment', {
-        bookingId: 'BBBD126789',
-        vendorName: vendorName,
-        serviceName: eventType + ' - Decoration & Setup',
-        totalAmount: finalPayableAmount,
-        baseAmount: agreedAmount,
-        discountAmount: discountAmount,
-        appliedCoupon: appliedCouponCode,
-        advancePaid: advanceAmount,
-        amount: remainingAtEvent,
-        eventDate: eventDate,
-        eventLocation: eventLocation,
-        guestCount: guestCount,
-      });
-    } else {
-      Alert.alert(
-        'Booking Confirmed!',
-        `Your booking with ${vendorName} for ₹${finalPayableAmount.toLocaleString('en-IN')} has been confirmed successfully.`
-      );
+      api
+        .vendors({ q: vendorName, limit: '1' })
+        .then(async (res) => {
+          const vendorProfileId = route?.params?.vendorProfileId || res.items[0]?.id;
+          if (!vendorProfileId) throw new Error('Vendor not found');
+          const created = await api.createBooking({
+            vendorProfileId,
+            eventTitle: `${eventType} - ${vendorName}`,
+            eventType,
+            eventDate,
+            eventTime,
+            location: eventLocation,
+            guestCount,
+            price: agreedAmount,
+            couponCode: appliedCouponCode || undefined,
+          });
+          navigation.navigate('MakePayment', {
+            bookingId: created.booking.bookingCode,
+            bookingMongoId: created.booking.id,
+            vendorName,
+            serviceName: eventType + ' - Decoration & Setup',
+            totalAmount: finalPayableAmount,
+            baseAmount: agreedAmount,
+            discountAmount,
+            appliedCoupon: appliedCouponCode,
+            advancePaid: created.booking.advanceAmount,
+            amount: created.booking.balanceDue,
+            eventDate,
+            eventLocation,
+            guestCount,
+          });
+        })
+        .catch((err) => Alert.alert('Booking failed', userMessage(err)));
+      return;
     }
+    Alert.alert(
+      'Booking Confirmed!',
+      `Your booking with ${vendorName} for ₹${finalPayableAmount.toLocaleString('en-IN')} has been confirmed successfully.`
+    );
   };
 
   return (

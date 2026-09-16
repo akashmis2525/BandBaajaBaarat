@@ -19,6 +19,8 @@ import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api, userMessage } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export const SettingsScreen: React.FC<{ navigation?: any; onBack?: () => void }> = ({
   navigation,
@@ -145,7 +147,7 @@ export const SettingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
   };
 
   const handleSavePassword = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       Alert.alert('Missing Fields', 'Please fill in all password fields.');
       return;
     }
@@ -157,11 +159,16 @@ export const SettingsScreen: React.FC<{ navigation?: any; onBack?: () => void }>
       Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
       return;
     }
-    setShowPasswordModal(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    Alert.alert('Password Updated 🔒', 'Your account password has been changed successfully.');
+    api
+      .changePassword({ currentPassword: currentPassword || undefined, newPassword })
+      .then(() => {
+        setShowPasswordModal(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        Alert.alert('Password Updated 🔒', 'Your account password has been changed successfully.');
+      })
+      .catch((err) => Alert.alert('Could not update password', userMessage(err)));
   };
 
   const handleDeleteAccount = () => {

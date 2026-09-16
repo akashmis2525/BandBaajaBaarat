@@ -11,3 +11,7 @@ npm-debug.*
 web-build/
 .DS_Store
 *.log
+.env
+backend/node_modules/
+backend/dist/
+backend/uploads/

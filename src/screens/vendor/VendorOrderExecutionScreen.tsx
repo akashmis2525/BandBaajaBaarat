@@ -13,6 +13,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 interface VendorOrderExecutionProps {
   navigation?: any;
@@ -27,6 +28,7 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
 }) => {
   const insets = useSafeAreaInsets();
   const bookingId = route?.params?.bookingId || 'BBBD126789';
+  const mongoId = route?.params?.bookingMongoId || route?.params?.id;
   const customerName = route?.params?.customerName || 'Rahul Verma & Priya Jain';
   const eventTitle = route?.params?.eventTitle || 'Wedding Ceremony Mandap & Stage Setup';
   const eventDate = route?.params?.eventDate || '25 Nov 2026 (Wednesday)';
@@ -35,6 +37,16 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
   const balanceDue = route?.params?.balanceDue || 50000;
 
   const [currentStep, setCurrentStep] = useState(2); // 1 to 4
+
+  React.useEffect(() => {
+    if (!mongoId || !/^[a-fA-F0-9]{24}$/.test(String(mongoId))) return;
+    api
+      .booking(String(mongoId))
+      .then((res) => {
+        if (res.booking.executionStep) setCurrentStep(res.booking.executionStep);
+      })
+      .catch(() => undefined);
+  }, [mongoId]);
 
   // Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -105,15 +117,22 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
   const handleNextStep = () => {
     if (currentStep < 4) {
       const next = currentStep + 1;
-      setCurrentStep(next);
-      showDialog({
-        type: 'success',
-        title: 'Status Updated! 🚀',
-        message: `Event execution milestone has been updated to: "${steps[next - 1].title}". Customer is tracking live on their app.`,
-        confirmText: 'Continue Tracking',
-        highlightText: `Step ${next} of 4 Complete`,
-        onConfirm: hideDialog,
-      });
+      const apply = () => {
+        setCurrentStep(next);
+        showDialog({
+          type: 'success',
+          title: 'Status Updated! 🚀',
+          message: `Event execution milestone has been updated to: "${steps[next - 1].title}". Customer is tracking live on their app.`,
+          confirmText: 'Continue Tracking',
+          highlightText: `Step ${next} of 4 Complete`,
+          onConfirm: hideDialog,
+        });
+      };
+      if (mongoId && /^[a-fA-F0-9]{24}$/.test(String(mongoId))) {
+        api.updateExecution(String(mongoId), next).then(apply).catch(() => apply());
+        return;
+      }
+      apply();
     } else {
       showDialog({
         type: 'royal',

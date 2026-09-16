@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
 import { Assets } from '../constants/assets';
 import { useAuth } from '../context/AuthContext';
+import { api, userMessage } from '../services/api';
 
 interface EditProfileScreenProps {
   navigation?: any;
@@ -83,31 +84,40 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation
     }
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!fullName.trim()) {
       Alert.alert('Validation Error', 'Please enter your full name');
       return;
     }
 
-    // Update global auth context
-    updateProfile({
-      name: fullName.trim(),
-    });
-
-    Alert.alert(
-      'Profile Updated',
-      'Your profile information has been successfully saved!',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            if (navigation?.goBack) {
-              navigation.goBack();
-            }
+    try {
+      await updateProfile({
+        name: fullName.trim(),
+        email: emailAddress,
+        dob,
+        gender,
+        locationLabel: location,
+        language,
+        aboutMe,
+        interests: selectedInterests,
+      });
+      Alert.alert(
+        'Profile Updated',
+        'Your profile information has been successfully saved!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (navigation?.goBack) {
+                navigation.goBack();
+              }
+            },
           },
-        },
-      ]
-    );
+        ],
+      );
+    } catch (err) {
+      Alert.alert('Update failed', userMessage(err));
+    }
   };
 
   const handleUpdatePhoto = () => {

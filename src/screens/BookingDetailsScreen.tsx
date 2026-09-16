@@ -16,6 +16,8 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
+import { api } from '../services/api';
+import { resolveImage } from '../utils/images';
 
 interface BookingDetailsScreenProps {
   navigation?: any;
@@ -34,28 +36,58 @@ export const BookingDetailsScreen: React.FC<BookingDetailsScreenProps> = ({
   const [selectedTime, setSelectedTime] = useState('5:00 PM - 9:00 PM');
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const booking = {
-    bookingId: 'TI1265089',
-    serviceCategory: 'Dhol Services',
-    vendorName: 'Royal Beats Dhol Group',
+  const [booking, setBooking] = useState({
+    id: route?.params?.booking?.id || '',
+    bookingId: route?.params?.booking?.bookingId || 'TI1265089',
+    serviceCategory: route?.params?.booking?.category || 'Dhol Services',
+    vendorName: route?.params?.booking?.vendorName || 'Royal Beats Dhol Group',
     rating: 4.6,
     reviewsCount: 210,
     experience: '5+ Years',
-    eventDate: '15 Nov 2026, Sunday',
-    eventTime: '5:00 PM - 9:00 PM',
+    eventDate: route?.params?.booking?.date || '15 Nov 2026, Sunday',
+    eventTime: route?.params?.booking?.time || '5:00 PM - 9:00 PM',
     duration: '4 Hours',
-    location: 'Indore, Madhya Pradesh',
+    location: route?.params?.booking?.location || 'Indore, Madhya Pradesh',
     bookingDate: '11 Nov 2026, 09:41 AM',
     vendorNotifiedDate: '11 Nov, 10:15 AM',
     photosCount: 5,
-    image: Assets.serviceBrassBand,
-    vendorPhone: '+91 98765 43210',
-    basePrice: 8000,
+    image: route?.params?.booking?.image || Assets.serviceBrassBand,
+    vendorPhone: route?.params?.booking?.phone || '+91 98765 43210',
+    basePrice: route?.params?.booking?.priceNum || 8000,
     artistCharges: 2000,
     travelCharges: 1000,
-    totalAmount: 11000,
-    status: 'Upcoming',
-  };
+    totalAmount: route?.params?.booking?.priceNum || 11000,
+    status: route?.params?.booking?.badge || 'Upcoming',
+  });
+
+  React.useEffect(() => {
+    const id = route?.params?.bookingId || route?.params?.booking?.id;
+    if (!id || !/^[a-fA-F0-9]{24}$/.test(String(id))) return;
+    api
+      .booking(String(id))
+      .then((res) => {
+        const b = res.booking;
+        setBooking((prev) => ({
+          ...prev,
+          id: b.id,
+          bookingId: String(b.bookingId || b.bookingCode || prev.bookingId).replace(/^#/, ''),
+          serviceCategory: b.category || prev.serviceCategory,
+          vendorName: b.vendorName || prev.vendorName,
+          eventDate: b.date || prev.eventDate,
+          eventTime: b.time || prev.eventTime,
+          duration: b.duration || prev.duration,
+          location: b.location || prev.location,
+          vendorPhone: b.vendorPhone || b.phone || prev.vendorPhone,
+          image: resolveImage(b.imageKey) || prev.image,
+          basePrice: b.basePrice || prev.basePrice,
+          artistCharges: b.artistCharges || prev.artistCharges,
+          travelCharges: b.travelCharges || prev.travelCharges,
+          totalAmount: b.priceNum || prev.totalAmount,
+          status: b.badge || prev.status,
+        }));
+      })
+      .catch(() => undefined);
+  }, [route?.params?.bookingId]);
 
   const handleBack = () => {
     if (onBack) {
@@ -467,6 +499,12 @@ export const BookingDetailsScreen: React.FC<BookingDetailsScreenProps> = ({
               style={styles.confirmRescheduleBtn}
               activeOpacity={0.85}
               onPress={() => {
+                const id = booking.id;
+                if (id && /^[a-fA-F0-9]{24}$/.test(id)) {
+                  api
+                    .rescheduleBooking(id, { eventDate: selectedDate, eventTime: selectedTime })
+                    .catch(() => undefined);
+                }
                 setShowRescheduleModal(false);
                 Alert.alert(
                   'Reschedule Requested 🎉',
@@ -514,6 +552,10 @@ export const BookingDetailsScreen: React.FC<BookingDetailsScreenProps> = ({
               <TouchableOpacity
                 style={styles.cancelConfirmBtn}
                 onPress={() => {
+                  const id = booking.id;
+                  if (id && /^[a-fA-F0-9]{24}$/.test(id)) {
+                    api.cancelBooking(id, 'Cancelled from booking details').catch(() => undefined);
+                  }
                   setShowCancelModal(false);
                   Alert.alert(
                     'Booking Cancelled',

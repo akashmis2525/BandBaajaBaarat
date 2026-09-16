@@ -13,6 +13,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api, ApiMeeting } from '../../services/api';
 
 interface VendorMeetingManagerProps {
   navigation?: any;
@@ -36,30 +37,28 @@ export const VendorMeetingManagerScreen: React.FC<VendorMeetingManagerProps> = (
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const [meetingRequests, setMeetingRequests] = useState<MeetingRequest[]>([
-    {
-      id: 'M1',
-      customerName: 'Rahul Verma',
-      phone: '+91 98930 11223',
-      meetingDate: '16 September 2026',
-      meetingTime: '10:00 AM – 11:00 AM',
-      meetingLocation: 'At Vendor Office (301, Shekhar Central, Indore)',
-      eventType: 'Mandap & Stage Decor Discussion',
-      status: 'pending',
-      notes: 'Customer wants to review portfolio samples & finalize lighting.',
-    },
-    {
-      id: 'M2',
-      customerName: 'Priya Sharma',
-      phone: '+91 94250 88776',
-      meetingDate: '18 September 2026',
-      meetingTime: '4:00 PM – 5:00 PM',
-      meetingLocation: 'At Venue (Sayaji Hotel, Indore)',
-      eventType: 'On-Site Stage Measurement & Floral Demo',
-      status: 'confirmed',
-      notes: 'Site visit with banquet manager.',
-    },
-  ]);
+  const [meetingRequests, setMeetingRequests] = useState<MeetingRequest[]>([]);
+
+  React.useEffect(() => {
+    api
+      .meetings()
+      .then((res) => {
+        setMeetingRequests(
+          res.items.map((m: ApiMeeting) => ({
+            id: m._id,
+            customerName: m.customerName,
+            phone: m.phone,
+            meetingDate: m.meetingDate,
+            meetingTime: m.meetingTime,
+            meetingLocation: m.meetingLocation,
+            eventType: m.eventType,
+            status: m.status === 'cancelled' || m.status === 'completed' ? 'confirmed' : m.status,
+            notes: m.notes,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Dialog State
   const [dialogConfig, setDialogConfig] = useState<{

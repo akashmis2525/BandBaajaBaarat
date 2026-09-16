@@ -14,6 +14,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 interface VendorCreateQuotationProps {
   navigation?: any;
@@ -110,6 +111,17 @@ export const VendorCreateQuotationScreen: React.FC<VendorCreateQuotationProps> =
   };
 
   const handleSendQuotation = () => {
+    api
+      .createQuotation({
+        leadId: route?.params?.leadId,
+        customerName,
+        eventDate,
+        packageName,
+        items,
+        advanceRequirement: Number(advanceRequirement || 0),
+        discountApplied: Number(discountApplied || 0),
+      })
+      .catch(() => undefined);
     showDialog({
       type: 'success',
       title: 'Quotation Sent! 📄',
@@ -123,6 +135,9 @@ export const VendorCreateQuotationScreen: React.FC<VendorCreateQuotationProps> =
             quotationAmount: grandTotal,
             customerName: customerName,
             packageName: packageName,
+            customerId: route?.params?.customerId,
+            negotiationId: route?.params?.negotiationId,
+            leadId: route?.params?.leadId,
           });
         }
       },

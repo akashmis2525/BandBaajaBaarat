@@ -15,6 +15,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme';
+import { api, userMessage } from '../services/api';
 
 interface AddPaymentMethodScreenProps {
   navigation?: any;
@@ -97,20 +98,24 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
       return;
     }
 
-    Alert.alert(
-      'Card Saved Successfully',
-      'Your card has been securely saved and encrypted for fast checkout.',
-      [
-        {
-          text: 'Done',
-          onPress: () => {
-            if (navigation?.goBack) {
-              navigation.goBack();
-            }
-          },
-        },
-      ]
-    );
+    api
+      .createPaymentMethod({
+        type: 'card',
+        title: cardHolderName.trim() || 'Card',
+        cardNumber,
+        expiry: expiryDate,
+        holderName: cardHolderName,
+        isDefault,
+      })
+      .then(() => {
+        Alert.alert(
+          'Card Saved Successfully',
+          'Your card has been securely saved and encrypted for fast checkout.',
+          [{ text: 'Done', onPress: () => navigation?.goBack?.() }],
+        );
+      })
+      .catch((err) => Alert.alert('Could not save card', userMessage(err)));
+    return;
   };
 
   const handleSaveUpi = () => {
@@ -118,21 +123,39 @@ export const AddPaymentMethodScreen: React.FC<AddPaymentMethodScreenProps> = ({
       Alert.alert('Invalid UPI ID', 'Please enter a valid UPI VPA (e.g., username@okhdfcbank).');
       return;
     }
-    Alert.alert('UPI Added', 'Your UPI ID has been verified and saved.', [
-      {
-        text: 'Done',
-        onPress: () => navigation?.goBack?.(),
-      },
-    ]);
+    api
+      .createPaymentMethod({
+        type: 'upi',
+        title: selectedUpiApp,
+        brand: 'gpay',
+        upiId,
+        isDefault,
+      })
+      .then(() => {
+        Alert.alert('UPI Added', 'Your UPI ID has been verified and saved.', [
+          { text: 'Done', onPress: () => navigation?.goBack?.() },
+        ]);
+      })
+      .catch((err) => Alert.alert('Could not save UPI', userMessage(err)));
+    return;
   };
 
   const handleSaveWallet = () => {
-    Alert.alert('Wallet Linked', `${selectedWallet} has been linked to your account.`, [
-      {
-        text: 'Done',
-        onPress: () => navigation?.goBack?.(),
-      },
-    ]);
+    api
+      .createPaymentMethod({
+        type: 'wallet',
+        title: selectedWallet,
+        brand: 'paytm',
+        walletNumber,
+        isDefault,
+      })
+      .then(() => {
+        Alert.alert('Wallet Linked', `${selectedWallet} has been linked to your account.`, [
+          { text: 'Done', onPress: () => navigation?.goBack?.() },
+        ]);
+      })
+      .catch((err) => Alert.alert('Could not save wallet', userMessage(err)));
+    return;
   };
 
   const handleSaveNetBanking = () => {

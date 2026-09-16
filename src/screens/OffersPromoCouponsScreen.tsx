@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, ApiCoupon, userMessage } from '../services/api';
 
 interface OffersPromoCouponsScreenProps {
   navigation?: any;
@@ -45,68 +46,30 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
-  const coupons: Coupon[] = [
-    {
-      id: 'c1',
-      code: 'SHUBHVIVAH',
-      discountType: 'percentage',
-      discountText: '20% OFF',
-      title: 'Grand Wedding Season Special',
-      description: 'Get 20% instant discount up to ₹10,000 on Mandap, Decor & Catering bookings.',
-      minBookingAmount: 50000,
-      maxDiscount: 10000,
-      expiryDate: 'Valid till 30 Nov 2026',
-      category: 'wedding',
-      isPopular: true,
-    },
-    {
-      id: 'c2',
-      code: 'FIRSTBAARAT',
-      discountType: 'flat',
-      discountText: 'FLAT ₹2,500',
-      title: 'Welcome New Couple Offer',
-      description: 'Flat ₹2,500 off on your first vendor booking with Band Baaja Baarat.',
-      minBookingAmount: 15000,
-      expiryDate: 'Valid till 31 Dec 2026',
-      category: 'first',
-      isPopular: true,
-    },
-    {
-      id: 'c3',
-      code: 'ROYALDHOL',
-      discountType: 'flat',
-      discountText: '₹1,500 OFF',
-      title: 'Dhol & Brass Band Bonanza',
-      description: 'Exclusive discount on Top Rated Dhol Groups & Luxury Buggi bookings.',
-      minBookingAmount: 10000,
-      expiryDate: 'Valid till 15 Nov 2026',
-      category: 'vendor',
-    },
-    {
-      id: 'c4',
-      code: 'CASHBACK5000',
-      discountType: 'cashback',
-      discountText: '₹5,000 BACK',
-      title: 'UPI Payment Cashback Reward',
-      description: 'Get ₹5,000 wallet cashback on full advance payment via Google Pay or PhonePe.',
-      minBookingAmount: 60000,
-      expiryDate: 'Valid till 20 Nov 2026',
-      category: 'cashback',
-    },
-    {
-      id: 'c5',
-      code: 'GLAMMAKEUP',
-      discountType: 'percentage',
-      discountText: '15% OFF',
-      title: 'Bridal Makeup & Mehndi Combo',
-      description: 'Special 15% discount when booking Bridal Makeup and Mehndi artists together.',
-      minBookingAmount: 20000,
-      maxDiscount: 4000,
-      expiryDate: 'Valid till 25 Nov 2026',
-      category: 'wedding',
-    },
-  ];
+  React.useEffect(() => {
+    api
+      .coupons(selectedCategory)
+      .then((res) => {
+        setCoupons(
+          res.items.map((c: ApiCoupon) => ({
+            id: c._id,
+            code: c.code,
+            discountType: c.discountType,
+            discountText: c.discountText,
+            title: c.title,
+            description: c.description,
+            minBookingAmount: c.minBookingAmount,
+            maxDiscount: c.maxDiscount,
+            expiryDate: c.expiryDate,
+            category: c.category,
+            isPopular: c.isPopular,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, [selectedCategory]);
 
   const searchQuery = customCode.trim().toLowerCase();
   const filteredCoupons = coupons.filter((c) => {
@@ -130,62 +93,45 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
   };
 
   const handleApplyCoupon = (code: string) => {
-    const matched = coupons.find(
-      (c) => c.code.toUpperCase() === code.trim().toUpperCase()
-    );
-
-    if (matched) {
-      setAppliedCoupon(matched);
-      setCopiedCode(matched.code);
-      setApplyError(null);
-      setCustomCode(matched.code);
-      Alert.alert(
-        '🎉 Coupon Applied!',
-        `Coupon code "${matched.code}" is applied!\nYou get ${matched.discountText} on your booking.`,
-        [
-          {
-            text: 'Go to Booking Summary',
-            onPress: () => {
-              if (navigation?.navigate) {
-                navigation.navigate('BookingSummary', { appliedCoupon: matched.code });
-              }
+    api
+      .applyCoupon(code.trim().toUpperCase(), Number(route?.params?.amount || 50000))
+      .then((res) => {
+        const matched: Coupon = {
+          id: res.coupon._id,
+          code: res.coupon.code,
+          discountType: res.coupon.discountType,
+          discountText: res.coupon.discountText,
+          title: res.coupon.title,
+          description: res.coupon.description,
+          minBookingAmount: res.coupon.minBookingAmount,
+          maxDiscount: res.coupon.maxDiscount,
+          expiryDate: res.coupon.expiryDate,
+          category: res.coupon.category,
+          isPopular: res.coupon.isPopular,
+        };
+        setAppliedCoupon(matched);
+        setCopiedCode(matched.code);
+        setApplyError(null);
+        setCustomCode(matched.code);
+        Alert.alert(
+          '🎉 Coupon Applied!',
+          `Coupon code "${matched.code}" is applied!\nYou get ${matched.discountText} on your booking.`,
+          [
+            {
+              text: 'Go to Booking Summary',
+              onPress: () => {
+                if (navigation?.navigate) {
+                  navigation.navigate('BookingSummary', { appliedCoupon: matched.code });
+                }
+              },
             },
-          },
-          { text: 'OK', style: 'cancel' },
-        ]
-      );
-    } else {
-      // Auto allow custom code with flat ₹2,000 discount if generic
-      const customMockCoupon: Coupon = {
-        id: 'custom-' + Date.now(),
-        code: code.trim().toUpperCase(),
-        discountType: 'flat',
-        discountText: 'FLAT ₹2,000 OFF',
-        title: 'Special Promo Offer',
-        description: `Promo discount applied with code ${code.trim().toUpperCase()}`,
-        minBookingAmount: 10000,
-        expiryDate: 'Valid Today',
-        category: 'all',
-      };
-      setAppliedCoupon(customMockCoupon);
-      setCopiedCode(customMockCoupon.code);
-      setApplyError(null);
-      Alert.alert(
-        '🎉 Coupon Applied!',
-        `Special promo code "${code.toUpperCase()}" applied successfully!`,
-        [
-          {
-            text: 'Go to Booking Summary',
-            onPress: () => {
-              if (navigation?.navigate) {
-                navigation.navigate('BookingSummary', { appliedCoupon: code.toUpperCase() });
-              }
-            },
-          },
-          { text: 'OK', style: 'cancel' },
-        ]
-      );
-    }
+            { text: 'OK', style: 'cancel' },
+          ],
+        );
+      })
+      .catch((err) => {
+        setApplyError(userMessage(err, 'Invalid or expired coupon code'));
+      });
   };
 
   const handleApplyCustomCode = () => {

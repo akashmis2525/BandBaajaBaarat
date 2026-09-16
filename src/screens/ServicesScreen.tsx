@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
 import { ServiceDetailScreen } from './ServiceDetailScreen';
+import { api, ApiService } from '../services/api';
+import { resolveImage } from '../utils/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 12;
@@ -41,179 +43,34 @@ export const ServicesScreen: React.FC<{ navigation?: any; onSelectService?: (ser
   const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [allServices, setAllServices] = useState<ServiceItem[]>([]);
+
+  React.useEffect(() => {
+    api
+      .services()
+      .then((res) => {
+        const items: ServiceItem[] = res.items.map((s: ApiService) => ({
+          id: s._id || s.slug,
+          name: s.name,
+          tagline: s.tagline,
+          vendors: `${s.vendorsCount}+ Vendors`,
+          image: resolveImage(s.imageKey),
+          category: s.category,
+        }));
+        items.push({
+          id: 'more',
+          name: 'More Services',
+          tagline: 'Explore All Categories',
+          vendors: '',
+          category: 'All',
+          isMore: true,
+        });
+        setAllServices(items);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const filterTabs = ['All', 'Wedding Services', 'Shopping', 'Essentials', 'Entertainment'];
-
-  const allServices: ServiceItem[] = [
-    {
-      id: '1',
-      name: 'Dhol',
-      tagline: 'Make every beat special',
-      vendors: '120+ Vendors',
-      image: Assets.serviceDhol,
-      category: 'Wedding Services',
-    },
-    {
-      id: '2',
-      name: 'Band Baaja',
-      tagline: 'Traditional to Royal',
-      vendors: '80+ Vendors',
-      image: Assets.serviceBrassBand,
-      category: 'Wedding Services',
-    },
-    {
-      id: '3',
-      name: 'Buggi / Ghodi',
-      tagline: 'Ride in Royal Style',
-      vendors: '60+ Vendors',
-      image: Assets.serviceBuggi,
-      category: 'Wedding Services',
-    },
-    {
-      id: '4',
-      name: 'DJ Services',
-      tagline: 'Feel the Celebration',
-      vendors: '150+ Vendors',
-      image: Assets.serviceDj,
-      category: 'Entertainment',
-    },
-    {
-      id: '5',
-      name: 'Mehndi Artist',
-      tagline: 'Beautiful Hands, Happier Moments',
-      vendors: '200+ Vendors',
-      image: Assets.serviceMehndi,
-      category: 'Wedding Services',
-    },
-    {
-      id: '6',
-      name: 'Photographer',
-      tagline: 'Capture Your Forever',
-      vendors: '250+ Vendors',
-      image: Assets.servicePhotography,
-      category: 'Wedding Services',
-    },
-    {
-      id: '7',
-      name: 'Videographer',
-      tagline: 'Relive Your Moments',
-      vendors: '180+ Vendors',
-      image: Assets.servicePhotography,
-      category: 'Wedding Services',
-    },
-    {
-      id: '8',
-      name: 'Wedding Dress',
-      tagline: 'Bridal & Groom Collection',
-      vendors: '300+ Vendors',
-      image: Assets.serviceDresses,
-      category: 'Shopping',
-    },
-    {
-      id: '9',
-      name: 'Jewellery',
-      tagline: 'Artificial & Real',
-      vendors: '220+ Vendors',
-      image: Assets.serviceJewellery,
-      category: 'Shopping',
-    },
-    {
-      id: '10',
-      name: 'Shoes',
-      tagline: 'Step into Style',
-      vendors: '100+ Vendors',
-      image: Assets.serviceShoes,
-      category: 'Shopping',
-    },
-    {
-      id: '11',
-      name: 'Clothes',
-      tagline: 'For Every Occasion',
-      vendors: '250+ Vendors',
-      image: Assets.serviceClothes,
-      category: 'Shopping',
-    },
-    {
-      id: '12',
-      name: 'Puja Path Samagri',
-      tagline: 'Shubh Shuruaat',
-      vendors: '90+ Vendors',
-      image: Assets.serviceDecorators,
-      category: 'Essentials',
-    },
-    {
-      id: '13',
-      name: 'Decoration',
-      tagline: 'Turn Spaces into Stories',
-      vendors: '200+ Vendors',
-      image: Assets.serviceDecorators,
-      category: 'Wedding Services',
-    },
-    {
-      id: '14',
-      name: 'Makeup Artist',
-      tagline: 'Look Your Best',
-      vendors: '180+ Vendors',
-      image: Assets.serviceMehndi,
-      category: 'Wedding Services',
-    },
-    {
-      id: '15',
-      name: 'Catering',
-      tagline: 'Deliciously Memorable',
-      vendors: '160+ Vendors',
-      image: Assets.serviceDecorators,
-      category: 'Essentials',
-    },
-    {
-      id: '16',
-      name: 'Venue / Marriage Garden',
-      tagline: 'Perfect Place, Perfect Day',
-      vendors: '110+ Vendors',
-      image: Assets.weddingMandapArt,
-      category: 'Wedding Services',
-    },
-    {
-      id: '17',
-      name: 'Wedding Car',
-      tagline: 'Arrive in Elegance',
-      vendors: '120+ Vendors',
-      image: Assets.serviceBuggi,
-      category: 'Wedding Services',
-    },
-    {
-      id: '18',
-      name: 'Furniture / Event Rental',
-      tagline: 'Everything You Need',
-      vendors: '140+ Vendors',
-      image: Assets.serviceDecorators,
-      category: 'Essentials',
-    },
-    {
-      id: '19',
-      name: 'Gifts & Return Gifts',
-      tagline: 'Thoughtful Memories',
-      vendors: '90+ Vendors',
-      image: Assets.serviceJewellery,
-      category: 'Shopping',
-    },
-    {
-      id: '20',
-      name: 'Fireworks',
-      tagline: 'Light Up Your Celebration',
-      vendors: '70+ Vendors',
-      image: Assets.serviceDj,
-      category: 'Entertainment',
-    },
-    {
-      id: '21',
-      name: 'More Services',
-      tagline: 'Explore All Categories',
-      vendors: '',
-      category: 'All',
-      isMore: true,
-    },
-  ];
 
   const filteredServices = allServices.filter((item) => {
     const matchesTab = selectedTab === 'All' || item.category === selectedTab || item.isMore;

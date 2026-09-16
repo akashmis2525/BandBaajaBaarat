@@ -15,6 +15,8 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
+import { authError } from '../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -184,21 +186,47 @@ export const VendorKYCScreen: React.FC<VendorKYCScreenProps> = ({
         return;
       }
 
-      showDialog({
-        type: 'success',
-        title: 'Verification Complete! 🎉',
-        message: `Congratulations! "${businessName}" is now officially registered & verified as an elite Partner in ${city.split(',')[0]}.`,
-        confirmText: 'Enter Partner Dashboard',
-        highlightText: '✓ Verified & Top Rated Storefront Active',
-        onConfirm: () => {
-          hideDialog();
-          if (onSuccess) {
-            onSuccess();
-          } else if (navigation?.navigate) {
-            navigation.navigate('VendorDashboardTab');
-          }
-        },
-      });
+      api
+        .vendorKyc({
+          businessName,
+          category: selectedCategory,
+          city,
+          experience,
+          startingPrice,
+          payoutMethod,
+          bankAccount,
+          ifscCode,
+          upiId,
+          panNumber,
+          gstNumber,
+          docsUploaded: isDocUploaded,
+        })
+        .then(() => {
+          showDialog({
+            type: 'success',
+            title: 'Verification Complete! 🎉',
+            message: `Congratulations! "${businessName}" is now officially registered & verified as an elite Partner in ${city.split(',')[0]}.`,
+            confirmText: 'Enter Partner Dashboard',
+            highlightText: '✓ Verified & Top Rated Storefront Active',
+            onConfirm: () => {
+              hideDialog();
+              if (onSuccess) {
+                onSuccess();
+              } else if (navigation?.navigate) {
+                navigation.navigate('VendorDashboardTab');
+              }
+            },
+          });
+        })
+        .catch((err) => {
+          showDialog({
+            type: 'error',
+            title: 'KYC Failed',
+            message: authError(err),
+            confirmText: 'Try Again',
+            onConfirm: hideDialog,
+          });
+        });
     }
   };
 

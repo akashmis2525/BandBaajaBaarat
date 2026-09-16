@@ -13,6 +13,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api, ApiLead } from '../../services/api';
 
 interface VendorLeadsScreenProps {
   navigation?: any;
@@ -75,60 +76,30 @@ export const VendorLeadsScreen: React.FC<VendorLeadsScreenProps> = ({
     setDialogConfig((prev) => ({ ...prev, visible: false }));
   };
 
-  const [leads, setLeads] = useState<Lead[]>([
-    {
-      id: 'L1',
-      customerName: 'Rahul Verma & Priya Jain',
-      phone: '+91 98930 11223',
-      eventType: 'Grand Wedding & Reception',
-      eventDate: '25 Nov 2026',
-      venueCity: 'Royal Greens, Indore',
-      guestCount: '350 – 400 Guests',
-      budgetRange: '₹70,000 – ₹85,000',
-      status: 'new',
-      timeAgo: '10 mins ago',
-      notes: 'Looking for royal mandap setup, floral entry gate and ambient lighting.',
-    },
-    {
-      id: 'L2',
-      customerName: 'Amit Sharma',
-      phone: '+91 94250 55443',
-      eventType: 'Ring Ceremony / Sangeet',
-      eventDate: '12 Dec 2026',
-      venueCity: 'Brilliant Convention Centre, Indore',
-      guestCount: '200 Guests',
-      budgetRange: '₹40,000 – ₹55,000',
-      status: 'new',
-      timeAgo: '1 hour ago',
-      notes: 'Need LED backdrop stage and fairy lights ceiling canopy.',
-    },
-    {
-      id: 'L3',
-      customerName: 'Sneha Kulkarni',
-      phone: '+91 97550 88990',
-      eventType: 'Haldi & Mehndi Setup',
-      eventDate: '05 Dec 2026',
-      venueCity: 'Sayaji Hotel, Indore',
-      guestCount: '150 Guests',
-      budgetRange: '₹30,000 – ₹45,000',
-      status: 'contacted',
-      timeAgo: 'Yesterday',
-      notes: 'Yellow marigold decor with traditional photobooth props.',
-    },
-    {
-      id: 'L4',
-      customerName: 'Vikramaditya Rao',
-      phone: '+91 98270 33221',
-      eventType: 'Wedding Reception & Catering',
-      eventDate: '18 Jan 2027',
-      venueCity: 'Emerald Green, Ujjain Road, Indore',
-      guestCount: '500 Guests',
-      budgetRange: '₹1,20,000 – ₹1,50,000',
-      status: 'quoted',
-      timeAgo: '2 days ago',
-      notes: 'Quotation of ₹1,35,000 sent. Customer reviewing contract.',
-    },
-  ]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  React.useEffect(() => {
+    api
+      .vendorLeads(selectedTab === 'all' ? undefined : selectedTab)
+      .then((res) => {
+        setLeads(
+          res.items.map((l: ApiLead) => ({
+            id: l.id,
+            customerName: l.customerName,
+            phone: l.phone,
+            eventType: l.eventType,
+            eventDate: l.eventDate,
+            venueCity: l.venueCity,
+            guestCount: l.guestCount,
+            budgetRange: l.budgetRange,
+            status: l.status,
+            timeAgo: l.timeAgo,
+            notes: l.notes,
+          })),
+        );
+      })
+      .catch(() => undefined);
+  }, [selectedTab]);
 
   const filteredLeads =
     selectedTab === 'all'

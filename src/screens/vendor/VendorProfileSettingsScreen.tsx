@@ -16,6 +16,7 @@ import {
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoyalDialog } from '../../components/RoyalDialog';
+import { api } from '../../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -107,6 +108,15 @@ export const VendorProfileSettingsScreen: React.FC<VendorProfileSettingsProps> =
   };
 
   const handleSaveProfile = () => {
+    api
+      .updateVendorProfile({
+        businessName: bizName,
+        category: bizCategory,
+        address: bizLocation,
+        phone: bizPhone,
+        bio: bizBio,
+      })
+      .catch(() => undefined);
     setIsEditProfileVisible(false);
     showDialog({
       type: 'success',
@@ -119,6 +129,13 @@ export const VendorProfileSettingsScreen: React.FC<VendorProfileSettingsProps> =
   };
 
   const handleSaveHours = () => {
+    api
+      .updateVendorProfile({
+        openTime,
+        closeTime,
+        operatingDays,
+      })
+      .catch(() => undefined);
     setIsHoursModalVisible(false);
     showDialog({
       type: 'success',

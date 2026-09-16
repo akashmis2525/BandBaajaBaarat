@@ -87,6 +87,8 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
     };
     if (onApply) {
       onApply(filterData);
+    } else if (route?.params?.returnScreen && navigation?.navigate) {
+      navigation.navigate(route.params.returnScreen, { appliedFilters: filterData });
     }
     handleBack();
   };

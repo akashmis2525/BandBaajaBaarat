@@ -19,6 +19,8 @@ import { useLocation } from '../context/LocationContext';
 import { useAuth } from '../context/AuthContext';
 import { ManualLocationModal } from '../components/ManualLocationModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, ApiVendor } from '../services/api';
+import { resolveImage } from '../utils/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,10 +30,53 @@ export const HomeScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user } = useAuth();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({ v1: true });
+  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
+  const [topVendors, setTopVendors] = useState<
+    {
+      id: string;
+      name: string;
+      image: any;
+      rating: string;
+      reviews: string;
+      distance: string;
+      price: string;
+      verified: boolean;
+    }[]
+  >([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  React.useEffect(() => {
+    api
+      .vendors({ city: location.city || 'Indore', sort: 'rating', limit: '8' })
+      .then((res) => {
+        setTopVendors(
+          res.items.map((v: ApiVendor) => ({
+            id: v.id,
+            name: v.businessName || v.name,
+            image: resolveImage(v.imageKey),
+            rating: String(v.rating),
+            reviews: String(v.reviewsCount),
+            distance: v.distance || `${v.distanceKm || 2.4} KM`,
+            price: v.startingPriceText || v.price,
+            verified: v.isVerified,
+          })),
+        );
+        const fav: Record<string, boolean> = {};
+        res.items.forEach((v) => {
+          if (v.isFavorite) fav[v.id] = true;
+        });
+        setFavorites(fav);
+      })
+      .catch(() => undefined);
+    api
+      .notifications()
+      .then((res) => setUnreadCount(res.unreadCount))
+      .catch(() => undefined);
+  }, [location.city]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    api.toggleFavorite(id).catch(() => undefined);
   };
 
   // 12 Popular Wedding Services Grid
@@ -50,49 +95,7 @@ export const HomeScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
     { id: '12', name: 'More', isMore: true },
   ];
 
-  // Top Verified Vendors Data
-  const topVendors = [
-    {
-      id: 'v1',
-      name: 'Sharma Dhol Group',
-      image: Assets.groomBaarat,
-      rating: '4.8',
-      reviews: '320',
-      distance: '2.4 KM',
-      price: '₹8,000 onwards',
-      verified: true,
-    },
-    {
-      id: 'v2',
-      name: 'Click Studio Photography',
-      image: Assets.servicePhotography,
-      rating: '4.7',
-      reviews: '486',
-      distance: '3.1 KM',
-      price: '₹15,000 onwards',
-      verified: true,
-    },
-    {
-      id: 'v3',
-      name: 'Royal Buggi Service',
-      image: Assets.serviceBuggi,
-      rating: '4.6',
-      reviews: '210',
-      distance: '3.1 KM',
-      price: '₹12,000 onwards',
-      verified: true,
-    },
-    {
-      id: 'v4',
-      name: 'Mehndi by Rida',
-      image: Assets.serviceMehndi,
-      rating: '4.9',
-      reviews: '632',
-      distance: '1.8 KM',
-      price: '₹3,000 onwards',
-      verified: true,
-    },
-  ];
+  // 12 Popular Wedding Services Grid
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -152,7 +155,7 @@ export const HomeScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
           >
             <Text style={styles.bellEmoji}>🔔</Text>
             <View style={styles.notificationBadge}>
-              <Text style={styles.badgeCount}>3</Text>
+              <Text style={styles.badgeCount}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           </TouchableOpacity>
 
