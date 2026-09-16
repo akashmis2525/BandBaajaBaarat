@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorOrderExecutionProps {
   navigation?: any;
@@ -34,6 +35,41 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
   const balanceDue = route?.params?.balanceDue || 50000;
 
   const [currentStep, setCurrentStep] = useState(2); // 1 to 4
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const steps = [
     {
@@ -70,25 +106,28 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
     if (currentStep < 4) {
       const next = currentStep + 1;
       setCurrentStep(next);
-      Alert.alert(
-        'Status Updated! 🚀',
-        `Event status updated to: "${steps[next - 1].title}". Customer is tracking live.`
-      );
+      showDialog({
+        type: 'success',
+        title: 'Status Updated! 🚀',
+        message: `Event execution milestone has been updated to: "${steps[next - 1].title}". Customer is tracking live on their app.`,
+        confirmText: 'Continue Tracking',
+        highlightText: `Step ${next} of 4 Complete`,
+        onConfirm: hideDialog,
+      });
     } else {
-      Alert.alert(
-        'Event Completed! 🎉',
-        'Remaining balance has been requested. Earnings will be credited to your wallet.',
-        [
-          {
-            text: 'View Wallet Payouts',
-            onPress: () => {
-              if (navigation?.navigate) {
-                navigation.navigate('VendorWalletPayout');
-              }
-            },
-          },
-        ]
-      );
+      showDialog({
+        type: 'royal',
+        title: 'Event Completed! 🎉',
+        message: 'Wedding celebration has been fulfilled successfully. The remaining settlement of ₹50,000 has been credited to your wallet ledger.',
+        confirmText: 'View Wallet Payouts',
+        highlightText: '✓ Direct IMPS withdrawal ready',
+        onConfirm: () => {
+          hideDialog();
+          if (navigation?.navigate) {
+            navigation.navigate('VendorWalletPayout');
+          }
+        },
+      });
     }
   };
 
@@ -249,6 +288,9 @@ export const VendorOrderExecutionScreen: React.FC<VendorOrderExecutionProps> = (
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

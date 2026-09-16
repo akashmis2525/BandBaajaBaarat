@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 const { width } = Dimensions.get('window');
 
@@ -43,6 +44,41 @@ export const VendorKYCScreen: React.FC<VendorKYCScreenProps> = ({
   const [panNumber, setPanNumber] = useState('ABCDE1234F');
   const [gstNumber, setGstNumber] = useState('23ABCDE1234F1Z5');
   const [isDocUploaded, setIsDocUploaded] = useState(true);
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const categories = [
     {
@@ -104,42 +140,65 @@ export const VendorKYCScreen: React.FC<VendorKYCScreenProps> = ({
   const handleNextOrSubmit = () => {
     if (currentStep === 1) {
       if (!selectedCategory) {
-        Alert.alert('Selection Required', 'Please select your primary service category.');
+        showDialog({
+          type: 'warning',
+          title: 'Category Required',
+          message: 'Please select your primary wedding service category to continue.',
+          confirmText: 'Choose Category',
+          onConfirm: hideDialog,
+        });
         return;
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!businessName.trim() || !city.trim()) {
-        Alert.alert('Missing Details', 'Please enter your Business Name and Service City.');
+        showDialog({
+          type: 'warning',
+          title: 'Missing Details',
+          message: 'Please enter your Business Name and operating City to continue.',
+          confirmText: 'Fill Information',
+          onConfirm: hideDialog,
+        });
         return;
       }
       setCurrentStep(3);
     } else {
       if (payoutMethod === 'bank' && (!bankAccount.trim() || !ifscCode.trim())) {
-        Alert.alert('Bank Info Required', 'Please provide Bank Account Number and IFSC Code.');
+        showDialog({
+          type: 'warning',
+          title: 'Bank Account Required',
+          message: 'Please provide Bank Account Number and Bank IFSC Code for advance payouts.',
+          confirmText: 'Enter Details',
+          onConfirm: hideDialog,
+        });
         return;
       }
       if (payoutMethod === 'upi' && !upiId.trim()) {
-        Alert.alert('UPI Required', 'Please enter a valid UPI ID.');
+        showDialog({
+          type: 'warning',
+          title: 'UPI ID Required',
+          message: 'Please enter a valid Vendor UPI ID to receive instant customer tokens.',
+          confirmText: 'Enter UPI ID',
+          onConfirm: hideDialog,
+        });
         return;
       }
 
-      Alert.alert(
-        '🎉 Business KYC Verified!',
-        `Congratulations! "${businessName}" is now officially registered & verified as an elite Partner in ${city.split(',')[0]}.`,
-        [
-          {
-            text: 'Go to Vendor Dashboard',
-            onPress: () => {
-              if (onSuccess) {
-                onSuccess();
-              } else if (navigation?.navigate) {
-                navigation.navigate('VendorDashboardTab');
-              }
-            },
-          },
-        ]
-      );
+      showDialog({
+        type: 'success',
+        title: 'Verification Complete! 🎉',
+        message: `Congratulations! "${businessName}" is now officially registered & verified as an elite Partner in ${city.split(',')[0]}.`,
+        confirmText: 'Enter Partner Dashboard',
+        highlightText: '✓ Verified & Top Rated Storefront Active',
+        onConfirm: () => {
+          hideDialog();
+          if (onSuccess) {
+            onSuccess();
+          } else if (navigation?.navigate) {
+            navigation.navigate('VendorDashboardTab');
+          }
+        },
+      });
     }
   };
 
@@ -549,6 +608,9 @@ export const VendorKYCScreen: React.FC<VendorKYCScreenProps> = ({
 
         <View style={{ height: 28 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

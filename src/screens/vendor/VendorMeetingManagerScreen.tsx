@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorMeetingManagerProps {
   navigation?: any;
@@ -60,6 +61,41 @@ export const VendorMeetingManagerScreen: React.FC<VendorMeetingManagerProps> = (
     },
   ]);
 
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -70,14 +106,18 @@ export const VendorMeetingManagerScreen: React.FC<VendorMeetingManagerProps> = (
     }
   };
 
-  const handleAcceptMeeting = (id: string) => {
+  const handleAcceptMeeting = (id: string, customerName: string) => {
     setMeetingRequests((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: 'confirmed' } : m))
     );
-    Alert.alert(
-      'Meeting Confirmed! 🤝',
-      'The meeting has been confirmed and added to your calendar. Customer has been notified.'
-    );
+    showDialog({
+      type: 'success',
+      title: 'Meeting Confirmed! 🤝',
+      message: `Consultation appointment with ${customerName} has been locked on your calendar. Customer has been notified.`,
+      confirmText: 'Done',
+      highlightText: '📍 Reminder scheduled 1 hour before meeting',
+      onConfirm: hideDialog,
+    });
   };
 
   return (
@@ -214,36 +254,39 @@ export const VendorMeetingManagerScreen: React.FC<VendorMeetingManagerProps> = (
                 </TouchableOpacity>
 
                 {meeting.status === 'pending' ? (
-                  <TouchableOpacity
-                    style={styles.acceptBtn}
-                    activeOpacity={0.85}
-                    onPress={() => handleAcceptMeeting(meeting.id)}
-                  >
-                    <Ionicons name="checkmark-circle" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
-                    <Text style={styles.acceptBtnText}>Accept Meeting</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.confirmedStateBtn}
-                    onPress={() => {
-                      if (navigation?.navigate) {
-                        navigation.navigate('VendorCreateQuotation');
-                      }
-                    }}
-                  >
-                    <Text style={styles.confirmedStateBtnText}>Create Quotation →</Text>
-                  </TouchableOpacity>
-                )}
+                    <TouchableOpacity
+                      style={styles.acceptBtn}
+                      activeOpacity={0.85}
+                      onPress={() => handleAcceptMeeting(meeting.id, meeting.customerName)}
+                    >
+                      <Ionicons name="checkmark-circle" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
+                      <Text style={styles.acceptBtnText}>Accept Meeting</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.confirmedStateBtn}
+                      onPress={() => {
+                        if (navigation?.navigate) {
+                          navigation.navigate('VendorCreateQuotation');
+                        }
+                      }}
+                    >
+                      <Text style={styles.confirmedStateBtnText}>Create Quotation →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
 
-        <View style={{ height: 24 }} />
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+          <View style={{ height: 24 }} />
+        </ScrollView>
+
+        {/* Royal Themed Custom Dialog */}
+        <RoyalDialog {...dialogConfig} />
+      </SafeAreaView>
+    );
+  };
 
 const styles = StyleSheet.create({
   safeArea: {

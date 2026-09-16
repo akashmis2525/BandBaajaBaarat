@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorNegotiateProps {
   navigation?: any;
@@ -32,22 +33,56 @@ export const VendorNegotiateScreen: React.FC<VendorNegotiateProps> = ({
   const [counterOfferAmount, setCounterOfferAmount] = useState('75000');
   const [vendorAgreed, setVendorAgreed] = useState(false);
 
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const handleAgreePrice = () => {
     setVendorAgreed(true);
-    Alert.alert(
-      'Price Agreed! 🤝',
-      `You have agreed on ₹${parseInt(counterOfferAmount).toLocaleString('en-IN')} with ${customerName}. Booking summary is locked for advance payment.`,
-      [
-        {
-          text: 'View Active Bookings',
-          onPress: () => {
-            if (navigation?.navigate) {
-              navigation.navigate('VendorBookings');
-            }
-          },
-        },
-      ]
-    );
+    showDialog({
+      type: 'success',
+      title: 'Deal Agreed & Locked! 🤝',
+      message: `You have accepted ₹${parseInt(counterOfferAmount).toLocaleString('en-IN')} with ${customerName}. Booking contract is locked for advance payment.`,
+      confirmText: 'View Active Bookings',
+      highlightText: '🔒 ₹25,000 token advance required from couple',
+      onConfirm: () => {
+        hideDialog();
+        if (navigation?.navigate) {
+          navigation.navigate('VendorBookings');
+        }
+      },
+    });
   };
 
   const handleBack = () => {
@@ -192,6 +227,9 @@ export const VendorNegotiateScreen: React.FC<VendorNegotiateProps> = ({
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

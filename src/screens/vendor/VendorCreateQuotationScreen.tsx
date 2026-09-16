@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorCreateQuotationProps {
   navigation?: any;
@@ -48,13 +49,54 @@ export const VendorCreateQuotationScreen: React.FC<VendorCreateQuotationProps> =
   const [advanceRequirement, setAdvanceRequirement] = useState('25000');
   const [discountApplied, setDiscountApplied] = useState('0');
 
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   const discountVal = parseInt(discountApplied) || 0;
   const grandTotal = Math.max(subtotal - discountVal, 0);
 
   const handleAddItem = () => {
     if (!newItemName.trim() || !newItemPrice.trim()) {
-      Alert.alert('Missing Info', 'Please enter service name and price.');
+      showDialog({
+        type: 'warning',
+        title: 'Incomplete Item',
+        message: 'Please enter both item service name and price in rupees.',
+        confirmText: 'Fill Fields',
+        onConfirm: hideDialog,
+      });
       return;
     }
     const priceNum = parseInt(newItemPrice) || 0;
@@ -68,24 +110,23 @@ export const VendorCreateQuotationScreen: React.FC<VendorCreateQuotationProps> =
   };
 
   const handleSendQuotation = () => {
-    Alert.alert(
-      'Quotation Sent! 📄',
-      `Itemized quotation of ₹${grandTotal.toLocaleString('en-IN')} has been sent to ${customerName}.`,
-      [
-        {
-          text: 'Open Price Negotiation Stream',
-          onPress: () => {
-            if (navigation?.navigate) {
-              navigation.navigate('VendorNegotiate', {
-                quotationAmount: grandTotal,
-                customerName: customerName,
-                packageName: packageName,
-              });
-            }
-          },
-        },
-      ]
-    );
+    showDialog({
+      type: 'success',
+      title: 'Quotation Sent! 📄',
+      message: `Itemized wedding quotation of ₹${grandTotal.toLocaleString('en-IN')} has been delivered to ${customerName}.`,
+      confirmText: 'Open Bargaining Stream',
+      highlightText: `Package: ${packageName}`,
+      onConfirm: () => {
+        hideDialog();
+        if (navigation?.navigate) {
+          navigation.navigate('VendorNegotiate', {
+            quotationAmount: grandTotal,
+            customerName: customerName,
+            packageName: packageName,
+          });
+        }
+      },
+    });
   };
 
   const handleBack = () => {
@@ -262,6 +303,9 @@ export const VendorCreateQuotationScreen: React.FC<VendorCreateQuotationProps> =
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

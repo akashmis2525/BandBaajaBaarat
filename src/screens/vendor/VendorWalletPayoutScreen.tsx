@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorWalletPayoutProps {
   navigation?: any;
@@ -26,6 +27,41 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
 
   const [availableBalance, setAvailableBalance] = useState(71250);
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const transactions = [
     {
@@ -62,31 +98,41 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
 
   const handleWithdrawAll = () => {
     if (availableBalance <= 0) {
-      Alert.alert('No Balance', 'You currently have zero available balance to withdraw.');
+      showDialog({
+        type: 'warning',
+        title: 'Zero Balance',
+        message: 'You currently do not have any available balance to withdraw.',
+        confirmText: 'Understood',
+        onConfirm: hideDialog,
+      });
       return;
     }
 
-    Alert.alert(
-      'Confirm Bank Transfer',
-      `Transfer ₹${availableBalance.toLocaleString('en-IN')} directly to HDFC Bank A/C **** 7812?`,
-      [
-        {
-          text: 'Confirm Transfer',
-          onPress: () => {
-            setIsProcessingWithdrawal(true);
-            setTimeout(() => {
-              setIsProcessingWithdrawal(false);
-              setAvailableBalance(0);
-              Alert.alert(
-                'Transfer Initiated! 💸',
-                `₹71,250 has been transferred to your HDFC Bank account. Reference ID: IMPS${Date.now().toString().slice(-8)}.`
-              );
-            }, 800);
-          },
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    showDialog({
+      type: 'royal',
+      title: 'Confirm IMPS Transfer 💸',
+      message: `Transfer ₹${availableBalance.toLocaleString('en-IN')} directly to your verified HDFC Bank A/C **** 7812?`,
+      confirmText: 'Confirm & Transfer',
+      cancelText: 'Cancel',
+      highlightText: '⚡ Instant IMPS settlement • 0% transfer charge',
+      onCancel: hideDialog,
+      onConfirm: () => {
+        setIsProcessingWithdrawal(true);
+        setTimeout(() => {
+          setIsProcessingWithdrawal(false);
+          const transferredAmount = availableBalance;
+          setAvailableBalance(0);
+          showDialog({
+            type: 'success',
+            title: 'Payout Initiated! 🎉',
+            message: `₹${transferredAmount.toLocaleString('en-IN')} has been transferred to your HDFC Bank account successfully.`,
+            confirmText: 'Great!',
+            highlightText: `Reference ID: IMPS${Date.now().toString().slice(-8)}`,
+            onConfirm: hideDialog,
+          });
+        }, 600);
+      },
+    });
   };
 
   const handleBack = () => {
@@ -227,6 +273,9 @@ export const VendorWalletPayoutScreen: React.FC<VendorWalletPayoutProps> = ({
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };
