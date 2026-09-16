@@ -288,6 +288,7 @@ const VendorTabNavigator: React.FC<{ onSwitchToCustomer?: () => void; onLogout?:
         {(props) => (
           <VendorDashboardScreen
             {...props}
+            onNavigate={(screen, params) => props.navigation.navigate(screen, params)}
             onSwitchToCustomer={onSwitchToCustomer}
           />
         )}
@@ -334,6 +335,7 @@ const VendorStackNavigator: React.FC<{ onSwitchToCustomer?: () => void; onLogout
           />
         )}
       </Stack.Screen>
+      <Stack.Screen name="VendorLeads" component={VendorLeadsScreen} />
       <Stack.Screen name="VendorMeetingManager" component={VendorMeetingManagerScreen} />
       <Stack.Screen name="VendorCalendar" component={VendorCalendarScreen} />
       <Stack.Screen name="VendorCreateQuotation" component={VendorCreateQuotationScreen} />
