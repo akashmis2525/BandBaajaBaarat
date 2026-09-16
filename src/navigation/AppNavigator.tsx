@@ -23,6 +23,11 @@ import { CancelBookingScreen } from '../screens/CancelBookingScreen';
 import { DownloadInvoiceScreen } from '../screens/DownloadInvoiceScreen';
 import { InvoicePaymentScreen } from '../screens/InvoicePaymentScreen';
 import { MakePaymentScreen } from '../screens/MakePaymentScreen';
+import { OffersPromoCouponsScreen } from '../screens/OffersPromoCouponsScreen';
+import { PhotoGalleryScreen } from '../screens/PhotoGalleryScreen';
+import { WeddingPlannerToolkitScreen } from '../screens/WeddingPlannerToolkitScreen';
+import { SupportTicketScreen } from '../screens/SupportTicketScreen';
+import { FilterSortModal } from '../screens/FilterSortModal';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { RateReviewScreen } from '../screens/RateReviewScreen';
 import { ChatScreen } from '../screens/ChatScreen';
@@ -58,6 +63,11 @@ const HomeNavigator: React.FC = () => {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="SavedItems" component={SavedItemsScreen} />
       <Stack.Screen name="CompareServices" component={CompareServicesScreen} />
+      <Stack.Screen name="OffersPromoCoupons" component={OffersPromoCouponsScreen} />
+      <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} />
+      <Stack.Screen name="WeddingPlannerToolkit" component={WeddingPlannerToolkitScreen} />
+      <Stack.Screen name="SupportTicket" component={SupportTicketScreen} />
+      <Stack.Screen name="FilterSort" component={FilterSortModal} />
       <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
       <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
@@ -78,6 +88,9 @@ const ServicesNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AllServices" component={ServicesScreen} />
+      <Stack.Screen name="FilterSort" component={FilterSortModal} />
+      <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} />
+      <Stack.Screen name="OffersPromoCoupons" component={OffersPromoCouponsScreen} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
       <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
@@ -103,6 +116,9 @@ const BookingsNavigator: React.FC = () => {
       <Stack.Screen name="BookingsList" component={BookingsScreen} />
       <Stack.Screen name="BookingTracking" component={BookingTrackingScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+      <Stack.Screen name="WeddingPlannerToolkit" component={WeddingPlannerToolkitScreen} />
+      <Stack.Screen name="SupportTicket" component={SupportTicketScreen} />
+      <Stack.Screen name="OffersPromoCoupons" component={OffersPromoCouponsScreen} />
       <Stack.Screen name="NegotiatePrice" component={NegotiatePriceScreen} />
       <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
@@ -132,6 +148,9 @@ const ChatNavigator: React.FC = () => {
       <Stack.Screen name="BookingSummary" component={BookingSummaryScreen} />
       <Stack.Screen name="InvoicePayment" component={InvoicePaymentScreen} />
       <Stack.Screen name="MakePayment" component={MakePaymentScreen} />
+      <Stack.Screen name="OffersPromoCoupons" component={OffersPromoCouponsScreen} />
+      <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} />
+      <Stack.Screen name="SupportTicket" component={SupportTicketScreen} />
       <Stack.Screen name="RateReview" component={RateReviewScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
       <Stack.Screen name="VenueBookingDetails" component={VenueBookingDetailsScreen} />
