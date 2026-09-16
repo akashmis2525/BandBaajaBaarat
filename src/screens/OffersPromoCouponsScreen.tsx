@@ -43,6 +43,8 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'wedding' | 'cashback' | 'vendor' | 'first'>('all');
   const [customCode, setCustomCode] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const coupons: Coupon[] = [
     {
@@ -106,10 +108,16 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
     },
   ];
 
-  const filteredCoupons =
-    selectedCategory === 'all'
-      ? coupons
-      : coupons.filter((c) => c.category === selectedCategory);
+  const searchQuery = customCode.trim().toLowerCase();
+  const filteredCoupons = coupons.filter((c) => {
+    const matchesCategory = selectedCategory === 'all' || c.category === selectedCategory;
+    if (!searchQuery) return matchesCategory;
+    const matchesSearch =
+      c.code.toLowerCase().includes(searchQuery) ||
+      c.title.toLowerCase().includes(searchQuery) ||
+      c.description.toLowerCase().includes(searchQuery);
+    return matchesSearch;
+  });
 
   const handleBack = () => {
     if (onBack) {
@@ -122,29 +130,84 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
   };
 
   const handleApplyCoupon = (code: string) => {
-    setCopiedCode(code);
-    Alert.alert(
-      'Coupon Applied! 🎉',
-      `Coupon code "${code}" has been applied to your celebration booking!`,
-      [
-        {
-          text: 'Proceed to Booking',
-          onPress: () => {
-            if (navigation?.navigate) {
-              navigation.navigate('BookingSummary', { appliedCoupon: code });
-            }
-          },
-        },
-      ]
+    const matched = coupons.find(
+      (c) => c.code.toUpperCase() === code.trim().toUpperCase()
     );
+
+    if (matched) {
+      setAppliedCoupon(matched);
+      setCopiedCode(matched.code);
+      setApplyError(null);
+      setCustomCode(matched.code);
+      Alert.alert(
+        '🎉 Coupon Applied!',
+        `Coupon code "${matched.code}" is applied!\nYou get ${matched.discountText} on your booking.`,
+        [
+          {
+            text: 'Go to Booking Summary',
+            onPress: () => {
+              if (navigation?.navigate) {
+                navigation.navigate('BookingSummary', { appliedCoupon: matched.code });
+              }
+            },
+          },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+    } else {
+      // Auto allow custom code with flat ₹2,000 discount if generic
+      const customMockCoupon: Coupon = {
+        id: 'custom-' + Date.now(),
+        code: code.trim().toUpperCase(),
+        discountType: 'flat',
+        discountText: 'FLAT ₹2,000 OFF',
+        title: 'Special Promo Offer',
+        description: `Promo discount applied with code ${code.trim().toUpperCase()}`,
+        minBookingAmount: 10000,
+        expiryDate: 'Valid Today',
+        category: 'all',
+      };
+      setAppliedCoupon(customMockCoupon);
+      setCopiedCode(customMockCoupon.code);
+      setApplyError(null);
+      Alert.alert(
+        '🎉 Coupon Applied!',
+        `Special promo code "${code.toUpperCase()}" applied successfully!`,
+        [
+          {
+            text: 'Go to Booking Summary',
+            onPress: () => {
+              if (navigation?.navigate) {
+                navigation.navigate('BookingSummary', { appliedCoupon: code.toUpperCase() });
+              }
+            },
+          },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+    }
   };
 
   const handleApplyCustomCode = () => {
     if (!customCode.trim()) {
-      Alert.alert('Invalid Code', 'Please enter a valid promo code.');
+      setApplyError('Please enter a coupon code.');
       return;
     }
-    handleApplyCoupon(customCode.trim().toUpperCase());
+    handleApplyCoupon(customCode.trim());
+  };
+
+  const handleRemoveAppliedCoupon = () => {
+    setAppliedCoupon(null);
+    setCopiedCode(null);
+    setApplyError(null);
+  };
+
+  const handleProceedToBooking = () => {
+    if (navigation?.navigate) {
+      navigation.navigate('BookingSummary', {
+        appliedCoupon: appliedCoupon?.code || 'SHUBHVIVAH',
+      });
+    }
   };
 
   return (
@@ -208,12 +271,24 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
             <Ionicons name="ticket-outline" size={20} color="#D81B60" style={{ marginRight: 8 }} />
             <TextInput
               style={styles.couponInput}
-              placeholder="Enter coupon or promo code"
+              placeholder="Search or enter coupon (e.g. SHUBHVIVAH)"
               placeholderTextColor="#94A3B8"
               value={customCode}
-              onChangeText={setCustomCode}
+              onChangeText={(text) => {
+                setCustomCode(text);
+                if (applyError) setApplyError(null);
+              }}
               autoCapitalize="characters"
             />
+            {customCode.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setCustomCode('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ paddingHorizontal: 4 }}
+              >
+                <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
           </View>
           <TouchableOpacity
             style={[styles.applyCustomBtn, !customCode.trim() && styles.applyCustomBtnDisabled]}
@@ -224,6 +299,51 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
             <Text style={styles.applyCustomBtnText}>Apply</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Error Notification */}
+        {applyError && (
+          <View style={styles.errorAlertCard}>
+            <Ionicons name="alert-circle" size={16} color="#E11D48" style={{ marginRight: 6 }} />
+            <Text style={styles.errorAlertText}>{applyError}</Text>
+          </View>
+        )}
+
+        {/* Applied Coupon Card Banner */}
+        {appliedCoupon && (
+          <View style={styles.appliedSuccessBanner}>
+            <View style={styles.appliedSuccessTopRow}>
+              <View style={styles.appliedSuccessLeft}>
+                <View style={styles.appliedSuccessBadge}>
+                  <Ionicons name="checkmark-circle" size={16} color="#16A34A" style={{ marginRight: 4 }} />
+                  <Text style={styles.appliedSuccessCode}>{appliedCoupon.code}</Text>
+                </View>
+                <Text style={styles.appliedSuccessTitle}>
+                  {appliedCoupon.discountText} APPLIED!
+                </Text>
+                <Text style={styles.appliedSuccessSub}>
+                  {appliedCoupon.description}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.removeCouponBtn}
+                onPress={handleRemoveAppliedCoupon}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.removeCouponBtnText}>Remove ✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.proceedBookingBannerBtn}
+              activeOpacity={0.85}
+              onPress={handleProceedToBooking}
+            >
+              <Text style={styles.proceedBookingBannerBtnText}>Proceed to Booking Summary</Text>
+              <Ionicons name="arrow-forward" size={15} color="#FFFFFF" style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Top Promotional Banner */}
         <View style={styles.promoBanner}>
@@ -293,6 +413,49 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
           </TouchableOpacity>
         </ScrollView>
 
+        {/* Coupons List Header */}
+        <View style={styles.listHeaderRow}>
+          <Text style={styles.listHeaderTitle}>
+            {searchQuery ? `Search Results (${filteredCoupons.length})` : 'Available Coupons'}
+          </Text>
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setCustomCode('')}>
+              <Text style={styles.clearSearchText}>Clear Search</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        {/* No Results Empty State */}
+        {filteredCoupons.length === 0 && (
+          <View style={styles.emptyResultsCard}>
+            <Ionicons name="search-outline" size={32} color="#94A3B8" />
+            <Text style={styles.emptyResultsTitle}>No coupons found</Text>
+            <Text style={styles.emptyResultsSub}>
+              We couldn't find any offer matching "{customCode}". Try searching for:
+            </Text>
+            <View style={styles.quickCodeChipsRow}>
+              <TouchableOpacity
+                style={styles.quickChip}
+                onPress={() => {
+                  setCustomCode('SHUBHVIVAH');
+                  handleApplyCoupon('SHUBHVIVAH');
+                }}
+              >
+                <Text style={styles.quickChipText}>✨ SHUBHVIVAH (20% OFF)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickChip}
+                onPress={() => {
+                  setCustomCode('FIRSTBAARAT');
+                  handleApplyCoupon('FIRSTBAARAT');
+                }}
+              >
+                <Text style={styles.quickChipText}>🎉 FIRSTBAARAT (₹2.5k OFF)</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Coupons List */}
         <View style={styles.couponsList}>
           {filteredCoupons.map((coupon) => (
@@ -346,12 +509,17 @@ export const OffersPromoCouponsScreen: React.FC<OffersPromoCouponsScreenProps> =
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.applyBtn, copiedCode === coupon.code && styles.applyBtnActive]}
+                  style={[
+                    styles.applyBtn,
+                    (copiedCode === coupon.code || appliedCoupon?.code === coupon.code) && styles.applyBtnActive,
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => handleApplyCoupon(coupon.code)}
                 >
                   <Text style={styles.applyBtnText}>
-                    {copiedCode === coupon.code ? 'Applied ✓' : 'APPLY CODE'}
+                    {copiedCode === coupon.code || appliedCoupon?.code === coupon.code
+                      ? 'Applied ✓'
+                      : 'APPLY CODE'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -721,5 +889,150 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+  },
+
+  // Error Alert Card
+  errorAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  errorAlertText: {
+    fontSize: 12,
+    color: '#E11D48',
+    fontWeight: '600',
+  },
+
+  // Applied Success Banner
+  appliedSuccessBanner: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.2,
+    borderColor: '#86EFAC',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  appliedSuccessTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  appliedSuccessLeft: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  appliedSuccessBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  appliedSuccessCode: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#15803D',
+    letterSpacing: 0.5,
+  },
+  appliedSuccessTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#166534',
+    marginBottom: 2,
+  },
+  appliedSuccessSub: {
+    fontSize: 11,
+    color: '#15803D',
+    lineHeight: 15,
+  },
+  removeCouponBtn: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  removeCouponBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  proceedBookingBannerBtn: {
+    backgroundColor: '#16A34A',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  proceedBookingBannerBtnText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+
+  // List Header
+  listHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  listHeaderTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  clearSearchText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#E5093A',
+  },
+
+  // Empty Results
+  emptyResultsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  emptyResultsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  emptyResultsSub: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  quickCodeChipsRow: {
+    flexDirection: 'column',
+    gap: 8,
+    width: '100%',
+  },
+  quickChip: {
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FFE4E8',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  quickChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D81B60',
   },
 });

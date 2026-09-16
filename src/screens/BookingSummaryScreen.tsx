@@ -45,6 +45,32 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
   // Agreed Price
   const agreedAmount = route?.params?.amount || 75000;
   const vendorName = route?.params?.vendorName || 'Royal Events & Decor';
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
+    route?.params?.appliedCoupon || 'SHUBHVIVAH'
+  );
+
+  // Discount Calculation
+  const calculateDiscount = (code: string | null, base: number) => {
+    if (!code) return 0;
+    const upper = code.toUpperCase();
+    if (upper === 'SHUBHVIVAH') {
+      return Math.min(base * 0.2, 10000); // 20% max 10k
+    } else if (upper === 'FIRSTBAARAT') {
+      return 2500;
+    } else if (upper === 'ROYALDHOL') {
+      return 1500;
+    } else if (upper === 'GLAMMAKEUP') {
+      return Math.min(base * 0.15, 4000);
+    } else if (upper === 'CASHBACK5000') {
+      return 0; // Cashback reward
+    }
+    return 2000;
+  };
+
+  const discountAmount = calculateDiscount(appliedCouponCode, agreedAmount);
+  const finalPayableAmount = Math.max(agreedAmount - discountAmount, 0);
+  const advanceAmount = 25000;
+  const remainingAtEvent = Math.max(finalPayableAmount - advanceAmount, 0);
 
   // Terms Agreement
   const [isTermsAgreed, setIsTermsAgreed] = useState(true);
@@ -87,9 +113,12 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
         bookingId: 'BBBD126789',
         vendorName: vendorName,
         serviceName: eventType + ' - Decoration & Setup',
-        totalAmount: agreedAmount,
-        advancePaid: 25000,
-        amount: 50000,
+        totalAmount: finalPayableAmount,
+        baseAmount: agreedAmount,
+        discountAmount: discountAmount,
+        appliedCoupon: appliedCouponCode,
+        advancePaid: advanceAmount,
+        amount: remainingAtEvent,
         eventDate: eventDate,
         eventLocation: eventLocation,
         guestCount: guestCount,
@@ -97,7 +126,7 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
     } else {
       Alert.alert(
         'Booking Confirmed!',
-        `Your booking with ${vendorName} for ₹${agreedAmount.toLocaleString('en-IN')} has been confirmed successfully.`
+        `Your booking with ${vendorName} for ₹${finalPayableAmount.toLocaleString('en-IN')} has been confirmed successfully.`
       );
     }
   };
@@ -347,7 +376,58 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
           </View>
         </View>
 
-        {/* Section 4: Price Details */}
+        {/* Section 4: Offers & Coupons Card */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleLeft}>
+              <View style={styles.sectionIconCircle}>
+                <Ionicons name="pricetag" size={15} color="#E53935" />
+              </View>
+              <Text style={styles.sectionTitle}>Offers & Promo Code</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editLinkBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation?.navigate('OffersPromoCoupons')}
+            >
+              <Text style={styles.editLinkText}>
+                {appliedCouponCode ? 'Change Coupon' : 'View Offers'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {appliedCouponCode ? (
+            <View style={styles.appliedCouponRow}>
+              <View style={styles.couponTagLeft}>
+                <Ionicons name="checkmark-circle" size={18} color="#16A34A" style={{ marginRight: 6 }} />
+                <View>
+                  <Text style={styles.appliedCouponName}>{appliedCouponCode} Applied</Text>
+                  <Text style={styles.appliedCouponSavings}>
+                    You save ₹{discountAmount.toLocaleString('en-IN')} on this booking!
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.removeCouponMiniBtn}
+                onPress={() => setAppliedCouponCode(null)}
+              >
+                <Text style={styles.removeCouponMiniBtnText}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.emptyCouponRow}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('OffersPromoCoupons')}
+            >
+              <Ionicons name="ticket-outline" size={18} color="#D81B60" style={{ marginRight: 8 }} />
+              <Text style={styles.emptyCouponText}>Apply Coupon (SHUBHVIVAH, FIRSTBAARAT)</Text>
+              <Ionicons name="chevron-forward" size={16} color="#D81B60" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Section 5: Price Details */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleLeft}>
@@ -366,22 +446,36 @@ export const BookingSummaryScreen: React.FC<BookingSummaryProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.priceDetailsRow}>
-            <View style={styles.docIconSquare}>
-              <Ionicons name="document-text" size={22} color="#E53935" />
+          <View style={styles.priceBreakdownList}>
+            <View style={styles.priceBreakdownRow}>
+              <Text style={styles.priceBreakdownLabel}>Agreed Package Amount</Text>
+              <Text style={styles.priceBreakdownVal}>₹ {agreedAmount.toLocaleString('en-IN')}</Text>
             </View>
 
-            <View style={styles.priceAmountCol}>
-              <Text style={styles.priceLabel}>Agreed Amount</Text>
-              <Text style={styles.priceValue}>₹ {agreedAmount.toLocaleString('en-IN')}</Text>
-            </View>
-
-            <View style={styles.priceBadgeCol}>
-              <View style={styles.priceGreenPill}>
-                <Ionicons name="checkmark-circle" size={12} color="#15803D" style={{ marginRight: 3 }} />
-                <Text style={styles.priceGreenText}>Price Negotiated</Text>
+            {discountAmount > 0 && (
+              <View style={styles.priceBreakdownRow}>
+                <Text style={styles.priceDiscountLabel}>
+                  Coupon Discount ({appliedCouponCode})
+                </Text>
+                <Text style={styles.priceDiscountVal}>- ₹ {discountAmount.toLocaleString('en-IN')}</Text>
               </View>
-              <Text style={styles.priceIncludedText}>(Incl. all selected services)</Text>
+            )}
+
+            <View style={styles.priceDivider} />
+
+            <View style={styles.priceBreakdownRowTotal}>
+              <Text style={styles.priceTotalLabel}>Final Total Amount</Text>
+              <Text style={styles.priceTotalVal}>₹ {finalPayableAmount.toLocaleString('en-IN')}</Text>
+            </View>
+
+            <View style={styles.priceAdvanceRow}>
+              <Text style={styles.priceAdvanceLabel}>Advance to Confirm Now</Text>
+              <Text style={styles.priceAdvanceVal}>₹ {advanceAmount.toLocaleString('en-IN')}</Text>
+            </View>
+
+            <View style={styles.priceRemainingRow}>
+              <Text style={styles.priceRemainingLabel}>Balance Due on Event Day</Text>
+              <Text style={styles.priceRemainingVal}>₹ {remainingAtEvent.toLocaleString('en-IN')}</Text>
             </View>
           </View>
         </View>
@@ -1209,5 +1303,149 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#15803D',
+  },
+
+  // Applied Coupon Row
+  appliedCouponRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 10,
+    padding: 10,
+  },
+  couponTagLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  appliedCouponName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  appliedCouponSavings: {
+    fontSize: 10.5,
+    color: '#166534',
+    marginTop: 1,
+  },
+  removeCouponMiniBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#DCFCE7',
+    borderRadius: 6,
+  },
+  removeCouponMiniBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+
+  // Empty Coupon Row
+  emptyCouponRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FFE4E8',
+    borderRadius: 10,
+    padding: 10,
+  },
+  emptyCouponText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D81B60',
+    flex: 1,
+  },
+
+  // Price Breakdown List
+  priceBreakdownList: {
+    paddingVertical: 4,
+  },
+  priceBreakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  priceBreakdownLabel: {
+    fontSize: 12.5,
+    color: '#64748B',
+  },
+  priceBreakdownVal: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  priceDiscountLabel: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#16A34A',
+  },
+  priceDiscountVal: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
+  priceDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 8,
+  },
+  priceBreakdownRowTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  priceTotalLabel: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  priceTotalVal: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#D81B60',
+  },
+  priceAdvanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F2',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 6,
+  },
+  priceAdvanceLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#9F1239',
+  },
+  priceAdvanceVal: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#E5093A',
+  },
+  priceRemainingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  priceRemainingLabel: {
+    fontSize: 11.5,
+    color: '#64748B',
+  },
+  priceRemainingVal: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
   },
 });
