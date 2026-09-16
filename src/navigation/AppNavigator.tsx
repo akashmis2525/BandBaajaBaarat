@@ -5,6 +5,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Customer Screens
 import { SplashScreen } from '../screens/SplashScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { LocationAccessScreen } from '../screens/LocationAccessScreen';
@@ -50,12 +52,29 @@ import { CompareServicesScreen } from '../screens/CompareServicesScreen';
 import { VenueBookingDetailsScreen } from '../screens/VenueBookingDetailsScreen';
 import { PaymentBookingScreen } from '../screens/PaymentBookingScreen';
 import { BookingTrackingScreen } from '../screens/BookingTrackingScreen';
-import { Colors } from '../theme';
+
+// Vendor Screens
+import { RoleSelectScreen } from '../screens/vendor/RoleSelectScreen';
+import { VendorLoginScreen } from '../screens/vendor/VendorLoginScreen';
+import { VendorKYCScreen } from '../screens/vendor/VendorKYCScreen';
+import { VendorDashboardScreen } from '../screens/vendor/VendorDashboardScreen';
+import { VendorLeadsScreen } from '../screens/vendor/VendorLeadsScreen';
+import { VendorMeetingManagerScreen } from '../screens/vendor/VendorMeetingManagerScreen';
+import { VendorCalendarScreen } from '../screens/vendor/VendorCalendarScreen';
+import { VendorCreateQuotationScreen } from '../screens/vendor/VendorCreateQuotationScreen';
+import { VendorNegotiateScreen } from '../screens/vendor/VendorNegotiateScreen';
+import { VendorBookingsScreen } from '../screens/vendor/VendorBookingsScreen';
+import { VendorOrderExecutionScreen } from '../screens/vendor/VendorOrderExecutionScreen';
+import { VendorWalletPayoutScreen } from '../screens/vendor/VendorWalletPayoutScreen';
+import { VendorPortfolioManagerScreen } from '../screens/vendor/VendorPortfolioManagerScreen';
+import { VendorProfileSettingsScreen } from '../screens/vendor/VendorProfileSettingsScreen';
+
 import { useAuth } from '../context/AuthContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+// Customer Home Navigator
 const HomeNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -84,6 +103,7 @@ const HomeNavigator: React.FC = () => {
   );
 };
 
+// Customer Services Navigator
 const ServicesNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -110,6 +130,7 @@ const ServicesNavigator: React.FC = () => {
   );
 };
 
+// Customer Bookings Navigator
 const BookingsNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -138,6 +159,7 @@ const BookingsNavigator: React.FC = () => {
   );
 };
 
+// Customer Chat Navigator
 const ChatNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -163,6 +185,7 @@ const ChatNavigator: React.FC = () => {
   );
 };
 
+// Customer Notifications Navigator
 const NotificationsNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -179,10 +202,16 @@ const NotificationsNavigator: React.FC = () => {
   );
 };
 
-const ProfileNavigator: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
+// Customer Profile Navigator
+const ProfileNavigator: React.FC<{ onLogout?: () => void; onSwitchToVendor?: () => void }> = ({
+  onLogout,
+  onSwitchToVendor,
+}) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="ProfileMain">
+        {(props) => <ProfileScreen {...props} onSwitchToVendor={onSwitchToVendor} />}
+      </Stack.Screen>
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyAddresses" component={MyAddressesScreen} />
       <Stack.Screen name="AddNewAddress" component={AddNewAddressScreen} />
@@ -210,17 +239,158 @@ const ProfileNavigator: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => 
   );
 };
 
+// Vendor Bottom Tab Navigator
+const VendorTabNavigator: React.FC<{ onSwitchToCustomer?: () => void; onLogout?: () => void }> = ({
+  onSwitchToCustomer,
+  onLogout,
+}) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 60 + (insets.bottom > 0 ? insets.bottom - 6 : 4),
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
+          },
+        ],
+        tabBarActiveTintColor: '#8A072D',
+        tabBarInactiveTintColor: '#68595D',
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarIcon: ({ focused, color }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'business';
+
+          if (route.name === 'VendorDashboardTab') {
+            iconName = focused ? 'speedometer' : 'speedometer-outline';
+          } else if (route.name === 'VendorLeadsTab') {
+            iconName = focused ? 'flash' : 'flash-outline';
+          } else if (route.name === 'VendorBookingsTab') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'VendorSettingsTab') {
+            iconName = focused ? 'person-circle' : 'person-circle-outline';
+          }
+
+          return (
+            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </View>
+          );
+        },
+      })}
+    >
+      <Tab.Screen
+        name="VendorDashboardTab"
+        options={{ title: 'Dashboard' }}
+      >
+        {(props) => (
+          <VendorDashboardScreen
+            {...props}
+            onSwitchToCustomer={onSwitchToCustomer}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="VendorLeadsTab"
+        component={VendorLeadsScreen}
+        options={{ title: 'Leads' }}
+      />
+      <Tab.Screen
+        name="VendorBookingsTab"
+        component={VendorBookingsScreen}
+        options={{ title: 'Bookings' }}
+      />
+      <Tab.Screen
+        name="VendorSettingsTab"
+        options={{ title: 'Settings' }}
+      >
+        {(props) => (
+          <VendorProfileSettingsScreen
+            {...props}
+            onSwitchToCustomer={onSwitchToCustomer}
+            onLogout={onLogout}
+          />
+        )}
+      </Tab.Screen>
+    </Tab.Navigator>
+  );
+};
+
+// Vendor Root Stack Navigator
+const VendorStackNavigator: React.FC<{ onSwitchToCustomer?: () => void; onLogout?: () => void }> = ({
+  onSwitchToCustomer,
+  onLogout,
+}) => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="VendorMainTabs">
+        {(props) => (
+          <VendorTabNavigator
+            {...props}
+            onSwitchToCustomer={onSwitchToCustomer}
+            onLogout={onLogout}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="VendorMeetingManager" component={VendorMeetingManagerScreen} />
+      <Stack.Screen name="VendorCalendar" component={VendorCalendarScreen} />
+      <Stack.Screen name="VendorCreateQuotation" component={VendorCreateQuotationScreen} />
+      <Stack.Screen name="VendorNegotiate" component={VendorNegotiateScreen} />
+      <Stack.Screen name="VendorBookings" component={VendorBookingsScreen} />
+      <Stack.Screen name="VendorOrderExecution" component={VendorOrderExecutionScreen} />
+      <Stack.Screen name="VendorWalletPayout" component={VendorWalletPayoutScreen} />
+      <Stack.Screen name="VendorPortfolioManager" component={VendorPortfolioManagerScreen} />
+      <Stack.Screen name="VendorKYC" component={VendorKYCScreen} />
+      <Stack.Screen name="ChatMain" component={ChatScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Root App Navigator
 export const AppNavigator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<
-    'splash' | 'onboarding' | 'location' | 'login' | 'profile' | 'main'
+    | 'splash'
+    | 'onboarding'
+    | 'role_select'
+    | 'location'
+    | 'login'
+    | 'profile'
+    | 'main'
+    | 'vendor_login'
+    | 'vendor_kyc'
+    | 'vendor_main'
   >('splash');
+
+  const [appMode, setAppMode] = useState<'customer' | 'vendor'>('customer');
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
 
   if (currentStep === 'splash') {
-    return <SplashScreen onFinish={() => setCurrentStep('onboarding')} />;
+    return (
+      <SplashScreen
+        onFinish={() => setCurrentStep('role_select')}
+      />
+    );
   }
 
+  if (currentStep === 'role_select') {
+    return (
+      <RoleSelectScreen
+        onSelectCustomer={() => {
+          setAppMode('customer');
+          setCurrentStep('onboarding');
+        }}
+        onSelectVendor={() => {
+          setAppMode('vendor');
+          setCurrentStep('vendor_login');
+        }}
+      />
+    );
+  }
+
+  // Customer Onboarding Flow
   if (currentStep === 'onboarding') {
     return (
       <OnboardingScreen
@@ -261,6 +431,51 @@ export const AppNavigator: React.FC = () => {
     );
   }
 
+  // Vendor Auth & KYC Flow
+  if (currentStep === 'vendor_login') {
+    return (
+      <VendorLoginScreen
+        onSuccess={() => setCurrentStep('vendor_kyc')}
+        onBack={() => setCurrentStep('role_select')}
+        onSwitchToCustomer={() => {
+          setAppMode('customer');
+          setCurrentStep('main');
+        }}
+      />
+    );
+  }
+
+  if (currentStep === 'vendor_kyc') {
+    return (
+      <VendorKYCScreen
+        onSuccess={() => {
+          setAppMode('vendor');
+          setCurrentStep('vendor_main');
+        }}
+        onBack={() => setCurrentStep('vendor_login')}
+      />
+    );
+  }
+
+  // Vendor Main Portal
+  if (appMode === 'vendor' || currentStep === 'vendor_main') {
+    return (
+      <NavigationContainer>
+        <VendorStackNavigator
+          onSwitchToCustomer={() => {
+            setAppMode('customer');
+            setCurrentStep('main');
+          }}
+          onLogout={() => {
+            setAppMode('customer');
+            setCurrentStep('role_select');
+          }}
+        />
+      </NavigationContainer>
+    );
+  }
+
+  // Customer Main App
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -276,7 +491,7 @@ export const AppNavigator: React.FC = () => {
           tabBarActiveTintColor: '#8A072D',
           tabBarInactiveTintColor: '#68595D',
           tabBarLabelStyle: styles.tabLabel,
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarIcon: ({ focused, color }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
             if (route.name === 'Home') {
@@ -307,7 +522,16 @@ export const AppNavigator: React.FC = () => {
         <Tab.Screen name="Notifications" component={NotificationsNavigator} options={{ title: 'Notifications' }} />
         <Tab.Screen name="Chat" component={ChatNavigator} options={{ title: 'Chat' }} />
         <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
-          {(props) => <ProfileNavigator {...props} onLogout={() => setCurrentStep('login')} />}
+          {(props) => (
+            <ProfileNavigator
+              {...props}
+              onLogout={() => setCurrentStep('role_select')}
+              onSwitchToVendor={() => {
+                setAppMode('vendor');
+                setCurrentStep('vendor_main');
+              }}
+            />
+          )}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

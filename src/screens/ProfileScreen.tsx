@@ -19,7 +19,10 @@ import { Colors, Spacing, Typography } from '../theme';
 import { Assets } from '../constants/assets';
 import { useAuth } from '../context/AuthContext';
 
-export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
+export const ProfileScreen: React.FC<{ navigation?: any; onSwitchToVendor?: () => void }> = ({
+  navigation,
+  onSwitchToVendor,
+}) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -306,6 +309,28 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Partner with Us / Switch to Vendor Mode */}
+        <TouchableOpacity
+          style={styles.switchVendorBanner}
+          activeOpacity={0.88}
+          onPress={() => {
+            if (onSwitchToVendor) {
+              onSwitchToVendor();
+            } else if (navigation?.navigate) {
+              navigation.navigate('RoleSelect');
+            }
+          }}
+        >
+          <View style={styles.switchVendorIconCircle}>
+            <Text style={{ fontSize: 20 }}>🏢</Text>
+          </View>
+          <View style={styles.switchVendorTextCol}>
+            <Text style={styles.switchVendorTitle}>Partner with Us (Vendor Mode)</Text>
+            <Text style={styles.switchVendorSub}>List your wedding business & get leads</Text>
+          </View>
+          <Ionicons name="arrow-forward-circle" size={22} color="#8A072D" />
+        </TouchableOpacity>
 
         {/* Logout Button */}
         <TouchableOpacity
@@ -857,5 +882,38 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800',
+  },
+  switchVendorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1.5,
+    borderColor: '#FECDD3',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  switchVendorIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFE4E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  switchVendorTextCol: {
+    flex: 1,
+  },
+  switchVendorTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#8A072D',
+  },
+  switchVendorSub: {
+    fontSize: 10.5,
+    color: '#9F1239',
+    marginTop: 1,
   },
 });
