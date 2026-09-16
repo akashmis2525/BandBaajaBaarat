@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorDashboardProps {
   navigation?: any;
@@ -27,6 +28,41 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [isOnline, setIsOnline] = useState(true);
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const navigateTo = (screenName: string, params?: any) => {
     if (onNavigate) {
@@ -78,13 +114,17 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
           style={[styles.statusToggleBtn, isOnline ? styles.statusOnline : styles.statusOffline]}
           activeOpacity={0.8}
           onPress={() => {
-            setIsOnline(!isOnline);
-            Alert.alert(
-              isOnline ? 'Switched to Offline' : 'Switched to Online',
-              isOnline
-                ? 'You are now offline. You will not receive instant inquiry alerts.'
-                : 'You are now online and available to receive instant wedding leads!'
-            );
+            const nextState = !isOnline;
+            setIsOnline(nextState);
+            showDialog({
+              type: nextState ? 'success' : 'warning',
+              title: nextState ? 'Storefront Online 🟢' : 'Storefront Offline ⏸️',
+              message: nextState
+                ? 'Your business is now ACTIVE. You will receive instant customer leads & quote requests.'
+                : 'You are now OFFLINE. Inquiries will be queued on your dashboard until you go back online.',
+              confirmText: 'Got It',
+              onConfirm: hideDialog,
+            });
           }}
         >
           <View style={[styles.statusDot, { backgroundColor: isOnline ? '#22C55E' : '#94A3B8' }]} />
@@ -320,6 +360,9 @@ export const VendorDashboardScreen: React.FC<VendorDashboardProps> = ({
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

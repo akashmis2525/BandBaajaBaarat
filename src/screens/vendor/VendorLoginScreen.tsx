@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorLoginScreenProps {
   onSuccess: () => void;
@@ -32,19 +33,73 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
   const [businessEmail, setBusinessEmail] = useState('contact@royalevents.in');
   const [activeTab, setActiveTab] = useState<'mobile' | 'email'>('mobile');
 
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const handleSendOtp = () => {
     if (mobileNumber.length < 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
+      showDialog({
+        type: 'warning',
+        title: 'Invalid Mobile Number',
+        message: 'Please enter a valid 10-digit mobile number to receive your OTP.',
+        confirmText: 'Check Number',
+        onConfirm: hideDialog,
+      });
       return;
     }
     setIsOtpSent(true);
     setOtp('1234');
-    Alert.alert('OTP Sent', 'Demo OTP: 1234 has been sent to +91 ' + mobileNumber);
+    showDialog({
+      type: 'success',
+      title: 'OTP Sent Successfully! 📩',
+      message: `Demo 4-digit OTP has been dispatched to +91 ${mobileNumber}.`,
+      confirmText: 'Auto-Fill 1234',
+      highlightText: '🔑 Demo Partner OTP: 1234',
+      onConfirm: hideDialog,
+    });
   };
 
   const handleVerifyLogin = () => {
     if (activeTab === 'mobile' && isOtpSent && otp !== '1234') {
-      Alert.alert('Invalid OTP', 'Please enter demo OTP: 1234');
+      showDialog({
+        type: 'error',
+        title: 'Incorrect OTP',
+        message: 'The OTP entered is incorrect. Please enter demo verification OTP: 1234.',
+        confirmText: 'Try Again',
+        onConfirm: hideDialog,
+      });
       return;
     }
     onSuccess();
@@ -266,6 +321,9 @@ export const VendorLoginScreen: React.FC<VendorLoginScreenProps> = ({
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

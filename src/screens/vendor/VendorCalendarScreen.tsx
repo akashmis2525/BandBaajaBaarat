@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorCalendarProps {
   navigation?: any;
@@ -26,15 +27,63 @@ export const VendorCalendarScreen: React.FC<VendorCalendarProps> = ({
   const [selectedMonth, setSelectedMonth] = useState('November 2026');
   const [blockedDates, setBlockedDates] = useState<number[]>([12, 25, 26]);
 
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1);
 
   const handleToggleDate = (day: number) => {
     if (blockedDates.includes(day)) {
       setBlockedDates(blockedDates.filter((d) => d !== day));
-      Alert.alert('Date Unblocked', `Nov ${day}, 2026 is now marked as AVAILABLE for inquiries.`);
+      showDialog({
+        type: 'success',
+        title: 'Date Unblocked! 🟢',
+        message: `November ${day}, 2026 is now marked as AVAILABLE. Couples will be able to send booking inquiries for this date.`,
+        confirmText: 'Done',
+        onConfirm: hideDialog,
+      });
     } else {
       setBlockedDates([...blockedDates, day]);
-      Alert.alert('Date Blocked 🔒', `Nov ${day}, 2026 is now BLOCKED. Couples will see you as booked.`);
+      showDialog({
+        type: 'royal',
+        title: 'Date Blocked 🔒',
+        message: `November ${day}, 2026 is now BLOCKED on your calendar to prevent double-booking.`,
+        confirmText: 'Understood',
+        highlightText: '🔒 Marked as fully booked for couples',
+        onConfirm: hideDialog,
+      });
     }
   };
 
@@ -213,6 +262,9 @@ export const VendorCalendarScreen: React.FC<VendorCalendarProps> = ({
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Royal Themed Custom Dialog */}
+      <RoyalDialog {...dialogConfig} />
     </SafeAreaView>
   );
 };

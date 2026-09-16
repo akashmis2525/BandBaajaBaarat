@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorPortfolioManagerProps {
   navigation?: any;
@@ -25,6 +26,41 @@ export const VendorPortfolioManagerScreen: React.FC<VendorPortfolioManagerProps>
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'photos' | 'packages'>('photos');
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const [photos, setPhotos] = useState([
     { id: '1', title: 'Grand Royal Carved Mandap', uri: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80', views: 420 },
@@ -60,26 +96,50 @@ export const VendorPortfolioManagerScreen: React.FC<VendorPortfolioManagerProps>
   ]);
 
   const handleUploadPhoto = () => {
-    Alert.alert(
-      'Upload New Showcase Photo 📸',
-      'Select photo source from gallery or take a live photo at current venue:',
-      [
-        {
-          text: 'Choose from Gallery',
-          onPress: () => {
-            const newP = {
-              id: Date.now().toString(),
-              title: 'Latest Wedding Setup Showcase',
-              uri: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80',
-              views: 1,
-            };
-            setPhotos([newP, ...photos]);
-            Alert.alert('Uploaded! 🎉', 'New photo added to your public storefront gallery.');
-          },
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    showDialog({
+      type: 'royal',
+      title: 'Upload Showcase Photo 📸',
+      message: 'Choose high-resolution photos of your recent wedding stage or mandap setup to attract premium couples in Indore.',
+      confirmText: 'Choose from Gallery',
+      cancelText: 'Cancel',
+      onCancel: hideDialog,
+      onConfirm: () => {
+        const newP = {
+          id: Date.now().toString(),
+          title: 'Latest Wedding Setup Showcase',
+          uri: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80',
+          views: 1,
+        };
+        setPhotos([newP, ...photos]);
+        showDialog({
+          type: 'success',
+          title: 'Photo Uploaded! 🎉',
+          message: 'New photo has been added to your public storefront portfolio.',
+          confirmText: 'Great!',
+          onConfirm: hideDialog,
+        });
+      },
+    });
+  };
+
+  const handleEditPackage = (pkgName: string) => {
+    showDialog({
+      type: 'royal',
+      title: 'Edit Package Details 📦',
+      message: `Modify deliverables, photos and pricing for "${pkgName}".`,
+      confirmText: 'Save Package',
+      cancelText: 'Cancel',
+      onCancel: hideDialog,
+      onConfirm: () => {
+        showDialog({
+          type: 'success',
+          title: 'Package Saved! ✨',
+          message: `Changes to "${pkgName}" are live for all upcoming inquiries.`,
+          confirmText: 'Done',
+          onConfirm: hideDialog,
+        });
+      },
+    });
   };
 
   const handleBack = () => {
@@ -235,22 +295,25 @@ export const VendorPortfolioManagerScreen: React.FC<VendorPortfolioManagerProps>
                   ))}
                 </View>
 
-                <TouchableOpacity
-                  style={styles.editPkgBtn}
-                  onPress={() => Alert.alert('Edit Package', `Editing ${pkg.name}...`)}
-                >
-                  <Text style={styles.editPkgBtnText}>Edit Package Details</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
+                  <TouchableOpacity
+                    style={styles.editPkgBtn}
+                    onPress={() => handleEditPackage(pkg.name)}
+                  >
+                    <Text style={styles.editPkgBtnText}>Edit Package Details</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
 
-        <View style={{ height: 24 }} />
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+          <View style={{ height: 24 }} />
+        </ScrollView>
+
+        {/* Royal Themed Custom Dialog */}
+        <RoyalDialog {...dialogConfig} />
+      </SafeAreaView>
+    );
+  };
 
 const styles = StyleSheet.create({
   safeArea: {

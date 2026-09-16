@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RoyalDialog } from '../../components/RoyalDialog';
 
 interface VendorLeadsScreenProps {
   navigation?: any;
@@ -38,6 +39,41 @@ export const VendorLeadsScreen: React.FC<VendorLeadsScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState<'all' | 'new' | 'contacted' | 'quoted'>('all');
+
+  // Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showDialog = (config: {
+    type?: 'success' | 'warning' | 'info' | 'error' | 'royal';
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    highlightText?: string;
+  }) => {
+    setDialogConfig({ ...config, visible: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const [leads, setLeads] = useState<Lead[]>([
     {
@@ -110,26 +146,26 @@ export const VendorLeadsScreen: React.FC<VendorLeadsScreenProps> = ({
   };
 
   const handleAcceptLead = (lead: Lead) => {
-    Alert.alert(
-      'Lead Accepted! 🎉',
-      `You can now chat directly with ${lead.customerName} and create a custom quotation.`,
-      [
-        {
-          text: 'Send Quotation',
-          onPress: () => {
-            if (navigation?.navigate) {
-              navigation.navigate('VendorCreateQuotation', {
-                leadId: lead.id,
-                customerName: lead.customerName,
-                eventDate: lead.eventDate,
-                budget: lead.budgetRange,
-              });
-            }
-          },
-        },
-        { text: 'OK', style: 'cancel' },
-      ]
-    );
+    showDialog({
+      type: 'royal',
+      title: 'Lead Accepted! ⚡',
+      message: `You are connected with ${lead.customerName} for their ${lead.eventDate} wedding (${lead.venueCity}).`,
+      confirmText: 'Create Custom Quote',
+      cancelText: 'View Details',
+      highlightText: `Estimated Budget: ${lead.budgetRange}`,
+      onCancel: hideDialog,
+      onConfirm: () => {
+        hideDialog();
+        if (navigation?.navigate) {
+          navigation.navigate('VendorCreateQuotation', {
+            leadId: lead.id,
+            customerName: lead.customerName,
+            eventDate: lead.eventDate,
+            budget: lead.budgetRange,
+          });
+        }
+      },
+    });
   };
 
   return (
