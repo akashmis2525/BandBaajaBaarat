@@ -1,6 +1,6 @@
 # 🎺 Band Baaja Baarat (बैंड बाजा बारात) - React Native Mobile Application
 
-> Premium Royal Wedding & Baarat Experience Mobile App Built with React Native & Expo
+> Premium Royal Wedding & Baarat Experience Mobile App Built with React Native CLI
 
 ---
 
@@ -49,9 +49,9 @@ BandBaajaBaarat/
 
 Frontend env (project root `.env`):
 ```
-EXPO_PUBLIC_API_URL=http://localhost:4000
+API_URL=http://localhost:4000
 ```
-On a physical phone, use your computer's LAN IP, e.g. `http://192.168.1.10:4000`.
+On a physical phone, use your computer's LAN IP, e.g. `http://192.168.1.10:4000`. Restart Metro after changing it.
 
 Seeded vendor login:
 - Phone OTP: `9826012345` (OTP is returned by the API in development)
@@ -59,36 +59,30 @@ Seeded vendor login:
 
 ---
 
-## 📱 How to Run & Test on Mobile Device
+## 📱 How to Run (React Native CLI)
 
-### Method 1: Live Testing with Expo Go (Instant on Real Phone)
-1. Install **Expo Go** app on your Android phone from Google Play Store or iOS from App Store.
-2. In the terminal inside this project folder:
-   ```bash
-   npx expo start
-   ```
-3. A QR code will appear in your terminal.
-4. Open the **Expo Go** app on your phone and **Scan the QR Code** (or use Camera on iPhone).
-5. The full app will load immediately on your physical device with live reload!
+Prerequisites: Node 22+, JDK 17, Android Studio (SDK 36), and for iOS a Mac with Xcode + CocoaPods.
 
----
+```bash
+npm install
+```
 
-### Method 2: Build APK (Installable Android APK)
-To generate a standalone `.apk` file for your Android phone:
-1. Install EAS CLI:
-   ```bash
-   npm install -g eas-cli
-   ```
-2. Login to Expo:
-   ```bash
-   eas login
-   ```
-3. Configure build:
-   ```bash
-   eas build:configure
-   ```
-4. Build the APK:
-   ```bash
-   eas build -p android --profile preview
-   ```
-5. Once completed, EAS gives you a direct download link to install the `.apk` on any phone.
+Start Metro, then run a native build in a second terminal:
+
+```bash
+npm start
+npm run android
+# macOS only:
+npm run ios
+```
+
+Android emulator can use `API_URL=http://10.0.2.2:4000` to reach the host machine. A physical device must use your LAN IP.
+
+Debug APK (after a successful Gradle setup):
+
+```bash
+cd android
+./gradlew assembleDebug
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/`.

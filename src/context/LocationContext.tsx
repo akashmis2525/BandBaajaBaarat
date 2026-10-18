@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState } from 'react';
-import * as Location from 'expo-location';
+import { PermissionsAndroid, Platform } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { api } from '../services/api';
+
+Geolocation.setRNConfiguration({
+  skipPermissionRequests: false,
+  authorizationLevel: 'whenInUse',
+  locationProvider: 'auto',
+});
 
 export interface LocationData {
   city: string;
@@ -40,6 +47,77 @@ const LocationContext = createContext<LocationContextType>({
   setManualLocation: () => {},
 });
 
+async function requestLocationPermission(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        title: 'Location permission',
+        message: 'Band Baaja Baarat uses your location to show nearby wedding vendors.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      },
+    );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  }
+
+  return new Promise((resolve) => {
+    Geolocation.requestAuthorization(
+      () => resolve(true),
+      () => resolve(false),
+    );
+  });
+}
+
+function getCurrentPosition(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise((resolve, reject) => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      (error) => reject(error),
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 },
+    );
+  });
+}
+
+async function reverseGeocode(latitude: number, longitude: number) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'BandBaajaBaarat/1.0' },
+  });
+  if (!res.ok) {
+    return null;
+  }
+  const data = (await res.json()) as {
+    address?: {
+      city?: string;
+      town?: string;
+      village?: string;
+      county?: string;
+      state_district?: string;
+      suburb?: string;
+      neighbourhood?: string;
+      road?: string;
+      state?: string;
+      postcode?: string;
+    };
+  };
+  const address = data.address;
+  if (!address) {
+    return null;
+  }
+  return {
+    city: address.city || address.town || address.village || address.county || 'Delhi NCR',
+    locality: address.suburb || address.neighbourhood || address.road || address.state_district || 'Central Wedding Hub',
+    state: address.state || 'India',
+    pincode: address.postcode || '110001',
+  };
+}
+
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [location, setLocation] = useState<LocationData>(defaultLocation);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -50,43 +128,31 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setErrorMessage(null);
 
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      const allowed = await requestLocationPermission();
+      if (!allowed) {
         setErrorMessage('Location permission was denied. You can enter your location manually.');
         setIsLoading(false);
         return false;
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const [geocoded] = await Location.reverseGeocodeAsync({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
+      const position = await getCurrentPosition();
+      const geocoded = await reverseGeocode(position.latitude, position.longitude);
 
       if (geocoded) {
-        const city = geocoded.city || geocoded.subregion || geocoded.region || 'Delhi NCR';
-        const locality = geocoded.district || geocoded.street || geocoded.name || 'Central Wedding Hub';
-        const state = geocoded.region || 'India';
-        const pincode = geocoded.postalCode || '110001';
-
         setLocation({
-          city,
-          locality,
-          state,
-          pincode,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          city: geocoded.city,
+          locality: geocoded.locality,
+          state: geocoded.state,
+          pincode: geocoded.pincode,
+          latitude: position.latitude,
+          longitude: position.longitude,
           isLiveGPS: true,
           activeVendorsCount: Math.floor(Math.random() * 120) + 95,
         });
       }
       setIsLoading(false);
       return true;
-    } catch (err: any) {
-      // Fallback with realistic location
+    } catch {
       setLocation({
         city: 'Jaipur',
         locality: 'C-Scheme, Civil Lines',

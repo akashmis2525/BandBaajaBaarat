@@ -1,6 +1,6 @@
 # Staging deployment
 
-Band Baaja Baarat is a React Native / Expo customer + vendor app with an Express API and MongoDB.
+Band Baaja Baarat is a React Native CLI customer + vendor app with an Express API and MongoDB.
 
 Do **not** run `npm run seed` against production. Seed is allowed only for development and staging catalog data.
 
@@ -79,10 +79,11 @@ Returns `{ status, environment, database }` with no secrets.
 
 ```
 npm install
-npx expo start
+npm start
+npm run android
 ```
 
-Set `EXPO_PUBLIC_API_URL` in the project `.env` (see `.env.example`). Restart Expo after changing it.
+Set `API_URL` in the project `.env` (see `.env.example`). Restart Metro after changing it.
 
 There is no separate native store build script in `package.json`. Typecheck/build:
 
@@ -113,7 +114,7 @@ npm run build
 | `SMS_TEMPLATE_ID` | MSG91 | DLT template id |
 | `TWILIO_ACCOUNT_SID` | Twilio | With `SMS_API_KEY` as auth token |
 | `PAYMENT_GATEWAY` | Yes for live charges | Empty = staging ledger only, **503 in production** |
-| `EXPO_PUBLIC_API_URL` | Yes on devices | Host only, no trailing `/api` |
+| `API_URL` | Yes on devices | Host only, no trailing `/api`. `EXPO_PUBLIC_API_URL` still works as an alias |
 | `PORT` | No | Default `4000` |
 | `BIND_HOST` | No | Default `0.0.0.0` |
 | `NODE_ENV` | Staging: `staging` | `staging`/`production` hide OTP and require secrets |
@@ -126,11 +127,11 @@ Do **not** use `http://localhost:4000` on a phone.
 
 1. Phone and PC on the same Wi-Fi.
 2. Find the PC LAN IPv4 (Windows: `ipconfig`, look for IPv4 under Wi-Fi).
-3. Set `EXPO_PUBLIC_API_URL=http://<LAN-IP>:4000` (no `/api`, no trailing slash).
+3. Set `API_URL=http://<LAN-IP>:4000` (no `/api`, no trailing slash).
 4. Allow inbound TCP **4000** on Windows Defender Firewall if the phone cannot connect.
-5. Restart Expo so the public env var is picked up.
+5. Restart Metro so the public env var is picked up.
 
-The client always calls `${EXPO_PUBLIC_API_URL}/api/...`.
+The client always calls `${API_URL}/api/...`.
 
 ---
 
@@ -203,4 +204,4 @@ If a physical device cannot reach the API:
 - [ ] Error handling works (app does not crash when API is down)
 - [ ] No secrets exposed in git or logs
 - [ ] No OTP returned outside development/test
-- [ ] Physical device tested (`EXPO_PUBLIC_API_URL` LAN IP)
+- [ ] Physical device tested (`API_URL` LAN IP)

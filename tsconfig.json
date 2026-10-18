@@ -1,8 +1,15 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@expo/vector-icons": ["src/shims/vector-icons"],
+      "expo-linear-gradient": ["src/shims/linear-gradient"],
+      "expo-status-bar": ["src/shims/status-bar"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "backend", "dist"]
+  "exclude": ["node_modules", "backend", "dist", "android", "ios", "_rn_template"]
 }

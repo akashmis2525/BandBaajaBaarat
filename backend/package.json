@@ -5,9 +5,9 @@
   "description": "Production API for Band Baaja Baarat wedding marketplace",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "dev": "node init && tsx watch src/server.ts",
+    "build": "node init && tsc",
+    "start": "node init && node dist/server.js",
     "seed": "tsx src/seed.ts",
     "verify:indexes": "tsx src/scripts/verifyIndexes.ts",
     "test": "tsx --test src/__tests__/api.test.ts",
