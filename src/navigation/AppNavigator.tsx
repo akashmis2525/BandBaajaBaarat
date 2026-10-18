@@ -262,7 +262,7 @@ const VendorTabNavigator: React.FC<{ onSwitchToCustomer?: () => void; onLogout?:
         tabBarInactiveTintColor: '#68595D',
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({ focused, color }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'business';
+          let iconName = 'business';
 
           if (route.name === 'VendorDashboardTab') {
             iconName = focused ? 'speedometer' : 'speedometer-outline';
@@ -517,7 +517,7 @@ export const AppNavigator: React.FC = () => {
           tabBarInactiveTintColor: '#68595D',
           tabBarLabelStyle: styles.tabLabel,
           tabBarIcon: ({ focused, color }) => {
-            let iconName: keyof typeof Ionicons.glyphMap = 'home';
+            let iconName = 'home';
 
             if (route.name === 'Home') {
               iconName = focused ? 'home' : 'home-outline';

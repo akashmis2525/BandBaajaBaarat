@@ -1,41 +1,4 @@
 {
-  "expo": {
-    "name": "Band Baaja Baarat",
-    "slug": "band-baaja-baarat",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "automatic",
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.bandbaajabaarat.app"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#5D0D10"
-      },
-      "package": "com.bandbaajabaarat.app"
-    },
-    "web": {
-      "favicon": "./assets/images/icon.png"
-    },
-    "plugins": [
-      "expo-font",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#5D0D10"
-        }
-      ],
-      "expo-status-bar"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "a415b2ea-b22d-4a97-b4bc-cdc28e4fc364"
-      }
-    }
-  }
+  "name": "BandBaajaBaarat",
+  "displayName": "Band Baaja Baarat"
 }
